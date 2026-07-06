@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archimedes Prompt Generator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06101f;
+      --panel: #0b1728;
+      --panel-2: #101f35;
+      --line: rgba(132, 170, 202, 0.22);
+      --text: #edf7ff;
+      --muted: #9eb2c4;
+      --blue: #20c7f5;
+      --green: #35d39d;
+      --amber: #f6c85f;
+      --red: #ff6b6b;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 720px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .status {
+      min-width: 190px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      padding: 18px 18px 0;
+    }
+
+    .panel-header h2 {
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .panel-header p {
+      margin-top: 6px;
+      color: var(--muted);
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    .dropzone {
+      display: grid;
+      place-items: center;
+      min-height: 152px;
+      border: 1px dashed rgba(32, 199, 245, 0.5);
+      border-radius: 8px;
+      background: rgba(32, 199, 245, 0.055);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 140ms ease, background 140ms ease;
+    }
+
+    .dropzone:hover {
+      border-color: var(--blue);
+      background: rgba(32, 199, 245, 0.085);
+    }
+
+    .dropzone strong {
+      display: block;
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+
+    .dropzone span {
+      color: var(--muted);
+    }
+
+    .hidden-input {
+      display: none;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.025);
+      min-height: 74px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .metric .value {
+      margin-top: 6px;
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 750;
+    }
+
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.025);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chip.outcome {
+      color: var(--green);
+      border-color: rgba(53, 211, 157, 0.45);
+      background: rgba(53, 211, 157, 0.07);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--text);
+      font-weight: 650;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 13px;
+    }
+
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      outline: none;
+      min-width: 0;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 92px;
+    }
+
+    input[type="text"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(32, 199, 245, 0.8);
+      box-shadow: 0 0 0 3px rgba(32, 199, 245, 0.13);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      background: var(--panel-2);
+      cursor: pointer;
+      min-height: 42px;
+      font-weight: 700;
+    }
+
+    .btn.primary {
+      border-color: rgba(32, 199, 245, 0.7);
+      background: linear-gradient(135deg, #0b7ea4, #2451a6);
+    }
+
+    .btn.success {
+      border-color: rgba(53, 211, 157, 0.6);
+      background: rgba(53, 211, 157, 0.14);
+    }
+
+    .generated {
+      min-height: 520px;
+      white-space: pre-wrap;
+      overflow: auto;
+      color: #e9f7ff;
+      background: #07111f;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .empty {
+      color: var(--muted);
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid rgba(246, 200, 95, 0.35);
+      border-radius: 8px;
+      background: rgba(246, 200, 95, 0.08);
+      color: #ffe2a2;
+    }
+
+    @media (max-width: 920px) {
+      .topbar {
+        display: block;
+      }
+
+      .status {
+        margin-top: 14px;
+        text-align: left;
+      }
+
+      .layout,
+      .row-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <div>
+        <h1>Report Prompt Generator</h1>
+        <p class="subtitle">Upload a dataset, describe what the user wants to learn, and generate a focused instruction for a more specific Archimedes report.</p>
+      </div>
+      <div class="status" id="status">No dataset loaded</div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Dataset Brief</h2>
+          <p>The file is read locally in this browser. This prototype does not send the dataset anywhere.</p>
+        </div>
+        <div class="panel-body">
+          <label class="dropzone" for="csvFile" id="dropzone">
+            <span>
+              <strong>Upload CSV</strong>
+              <span>Choose a dataset to inspect columns and likely business outcome fields</span>
+            </span>
+          </label>
+          <input class="hidden-input" id="csvFile" type="file" accept=".csv,text/csv">
+
+          <div class="summary-grid" aria-live="polite">
+            <div class="metric">
+              <div class="label">Rows Read</div>
+              <div class="value" id="rowCount">0</div>
+            </div>
+            <div class="metric">
+              <div class="label">Columns</div>
+              <div class="value" id="columnCount">0</div>
+            </div>
+            <div class="metric">
+              <div class="label">Outcome Fields</div>
+              <div class="value" id="outcomeCount">0</div>
+            </div>
+          </div>
+
+          <div class="notice">Best use: the user explains the business question here first, then pastes the generated prompt into the report generation step.</div>
+
+          <h3>Likely Outcome Fields</h3>
+          <div class="chip-list" id="outcomeChips"><span class="chip">Upload a CSV first</span></div>
+
+          <h3>Column Snapshot</h3>
+          <div class="chip-list" id="columnChips"><span class="chip">No columns yet</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Report Intent</h2>
+          <p>Turn a normal business request into a specific, grounded report prompt.</p>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="row-2">
+              <label>
+                Report mode
+                <select id="reportMode">
+                  <option value="Find the biggest business problem">Find the biggest business problem</option>
+                  <option value="Improve revenue or margin">Improve revenue or margin</option>
+                  <option value="Reduce cost, waste, or operational risk">Reduce cost, waste, or operational risk</option>
+                  <option value="Customer churn or retention">Customer churn or retention</option>
+                  <option value="Inventory and operations">Inventory and operations</option>
+                  <option value="Marketing and lead performance">Marketing and lead performance</option>
+                  <option value="Executive summary for leadership">Executive summary for leadership</option>
+                  <option value="Investor-ready business analysis">Investor-ready business analysis</option>
+                </select>
+              </label>
+
+              <label>
+                Audience
+                <select id="audience">
+                  <option value="business owner or founder">Business owner/founder</option>
+                  <option value="operations manager">Operations manager</option>
+                  <option value="sales or marketing team">Sales/marketing team</option>
+                  <option value="executive team">Executive team</option>
+                  <option value="investor or board reviewer">Investor/board</option>
+                  <option value="technical/data team">Technical/data team</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="row-2">
+              <label>
+                Specific outcome to inspect
+                <select id="outcomeSelect">
+                  <option value="">Auto-detect from dataset</option>
+                </select>
+              </label>
+
+              <label>
+                Recommendation style
+                <select id="recommendationStyle">
+                  <option value="balanced and practical">Balanced and practical</option>
+                  <option value="conservative and low-risk">Conservative and low-risk</option>
+                  <option value="aggressive growth-focused">Aggressive growth-focused</option>
+                  <option value="fastest low-cost actions first">Fastest low-cost actions first</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              What do you want to learn from the report?
+              <span class="hint">Example: “Why are stockouts happening and which channel/category is costing us the most?”</span>
+              <textarea id="focusText" placeholder="Describe the main thing the report should answer."></textarea>
+            </label>
+
+            <label>
+              What should the report avoid?
+              <span class="hint">Example: “Do not make broad dashboard commentary. Do not guess rates. Do not recommend discounts on stockout-risk products.”</span>
+              <textarea id="avoidText" placeholder="Optional guardrails, concerns, or things not to over-focus on."></textarea>
+            </label>
+
+            <label>
+              Extra context
+              <span class="hint">Example: “This is a synthetic demo dataset for a public product example.”</span>
+              <textarea id="contextText" placeholder="Optional business context, company stage, constraints, or known concerns."></textarea>
+            </label>
+
+            <div class="button-row">
+              <button class="btn primary" id="generateBtn" type="button">Generate Prompt</button>
+              <button class="btn success" id="copyBtn" type="button">Copy Prompt</button>
+              <button class="btn" id="resetBtn" type="button">Reset Brief</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="grid-column: 1 / -1;">
+        <div class="panel-header">
+          <h2>Generated Report Prompt</h2>
+          <p>Paste this into the report instruction field before generating the final Archimedes report.</p>
+        </div>
+        <div class="panel-body">
+          <div class="generated empty" id="generatedPrompt">Upload a CSV and fill in the brief, then click Generate Prompt.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const state = {
+      fileName: "",
+      rows: [],
+      columns: [],
+      profile: null
+    };
+
+    const outcomeTerms = [
+      "flag", "churn", "stockout", "converted", "conversion", "default",
+      "fraud", "cancel", "cancelled", "canceled", "retained", "renewed",
+      "returned", "late", "risk", "won", "lost", "success", "failure",
+      "qualified", "active", "closed", "readmitted", "approved"
+    ];
+
+    const idTerms = ["id", "uuid", "guid", "hash", "token", "key"];
+
+    const els = {
+      csvFile: document.getElementById("csvFile"),
+      dropzone: document.getElementById("dropzone"),
+      status: document.getElementById("status"),
+      rowCount: document.getElementById("rowCount"),
+      columnCount: document.getElementById("columnCount"),
+      outcomeCount: document.getElementById("outcomeCount"),
+      outcomeChips: document.getElementById("outcomeChips"),
+      columnChips: document.getElementById("columnChips"),
+      outcomeSelect: document.getElementById("outcomeSelect"),
+      reportMode: document.getElementById("reportMode"),
+      audience: document.getElementById("audience"),
+      recommendationStyle: document.getElementById("recommendationStyle"),
+      focusText: document.getElementById("focusText"),
+      avoidText: document.getElementById("avoidText"),
+      contextText: document.getElementById("contextText"),
+      generateBtn: document.getElementById("generateBtn"),
+      copyBtn: document.getElementById("copyBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      generatedPrompt: document.getElementById("generatedPrompt")
+    };
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"' && inQuotes && next === '"') {
+          cell += '"';
+          i += 1;
+        } else if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === "," && !inQuotes) {
+          row.push(cell);
+          cell = "";
+        } else if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && next === "\n") i += 1;
+          row.push(cell);
+          if (row.some(value => value.trim() !== "")) rows.push(row);
+          row = [];
+          cell = "";
+        } else {
+          cell += char;
+        }
+      }
+
+      row.push(cell);
+      if (row.some(value => value.trim() !== "")) rows.push(row);
+      return rows;
+    }
+
+    function normalizeValue(value) {
+      return String(value ?? "").trim();
+    }
+
+    function isNumeric(value) {
+      const cleaned = normalizeValue(value).replace(/[$,%]/g, "");
+      return cleaned !== "" && Number.isFinite(Number(cleaned));
+    }
+
+    function isBinaryValueSet(values) {
+      if (values.length !== 2) return false;
+      const normalized = values.map(value => String(value).trim().toLowerCase()).sort();
+      const sets = [
+        ["0", "1"],
+        ["false", "true"],
+        ["no", "yes"],
+        ["n", "y"],
+        ["fail", "pass"],
+        ["failure", "success"],
+        ["lost", "won"],
+        ["inactive", "active"]
+      ];
+      return sets.some(set => set[0] === normalized[0] && set[1] === normalized[1]);
+    }
+
+    function columnLooksLikeOutcome(name) {
+      const lowered = name.toLowerCase();
+      return outcomeTerms.some(term => lowered.includes(term));
+    }
+
+    function columnLooksLikeId(name, uniqueCount, rowCount) {
+      const lowered = name.toLowerCase();
+      const idLikeName = idTerms.some(term => lowered === term || lowered.endsWith("_" + term) || lowered.includes(term + "_"));
+      return idLikeName || (rowCount > 20 && uniqueCount / rowCount > 0.92 && lowered.includes("id"));
+    }
+
+    function profileRows(rawRows) {
+      if (rawRows.length < 2) {
+        return { rows: [], columns: [], numeric: [], categorical: [], outcomes: [] };
+      }
+
+      const columns = rawRows[0].map((column, index) => normalizeValue(column) || `column_${index + 1}`);
+      const records = rawRows.slice(1).map(raw => {
+        const item = {};
+        columns.forEach((column, index) => {
+          item[column] = normalizeValue(raw[index]);
+        });
+        return item;
+      });
+
+      const fields = columns.map(column => {
+        const values = records.map(row => row[column]).filter(value => value !== "");
+        const unique = [...new Set(values)];
+        const numericCount = values.filter(isNumeric).length;
+        const numericShare = values.length ? numericCount / values.length : 0;
+        const type = numericShare >= 0.85 ? "numeric" : "categorical";
+        const binary = isBinaryValueSet(unique);
+        const outcome = binary && columnLooksLikeOutcome(column) && !columnLooksLikeId(column, unique.length, records.length);
+        return {
+          name: column,
+          type,
+          uniqueCount: unique.length,
+          sampleValues: unique.slice(0, 5),
+          binary,
+          outcome
+        };
+      });
+
+      return {
+        rows: records,
+        columns,
+        fields,
+        numeric: fields.filter(field => field.type === "numeric"),
+        categorical: fields.filter(field => field.type === "categorical" && field.uniqueCount <= 50),
+        outcomes: fields.filter(field => field.outcome).slice(0, 5)
+      };
+    }
+
+    function renderProfile() {
+      const profile = state.profile;
+      els.status.textContent = state.fileName ? `Loaded ${state.fileName}` : "No dataset loaded";
+      els.rowCount.textContent = profile ? profile.rows.length.toLocaleString() : "0";
+      els.columnCount.textContent = profile ? profile.columns.length.toLocaleString() : "0";
+      els.outcomeCount.textContent = profile ? profile.outcomes.length.toLocaleString() : "0";
+
+      els.outcomeChips.innerHTML = "";
+      if (!profile || profile.outcomes.length === 0) {
+        els.outcomeChips.innerHTML = '<span class="chip">No obvious binary outcome fields detected</span>';
+      } else {
+        profile.outcomes.forEach(field => {
+          els.outcomeChips.insertAdjacentHTML("beforeend", `<span class="chip outcome">${escapeHtml(field.name)}</span>`);
+        });
+      }
+
+      els.columnChips.innerHTML = "";
+      if (!profile) {
+        els.columnChips.innerHTML = '<span class="chip">No columns yet</span>';
+      } else {
+        profile.fields.slice(0, 36).forEach(field => {
+          const label = `${field.name} · ${field.type}${field.binary ? " · binary" : ""}`;
+          els.columnChips.insertAdjacentHTML("beforeend", `<span class="chip">${escapeHtml(label)}</span>`);
+        });
+        if (profile.fields.length > 36) {
+          els.columnChips.insertAdjacentHTML("beforeend", `<span class="chip">+${profile.fields.length - 36} more</span>`);
+        }
+      }
+
+      els.outcomeSelect.innerHTML = '<option value="">Auto-detect from dataset</option>';
+      if (profile) {
+        profile.outcomes.forEach(field => {
+          els.outcomeSelect.insertAdjacentHTML("beforeend", `<option value="${escapeAttr(field.name)}">${escapeHtml(field.name)}</option>`);
+        });
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, "&#096;");
+    }
+
+    function getColumnLine(fields, fallback) {
+      if (!fields || fields.length === 0) return fallback;
+      return fields.slice(0, 16).map(field => field.name).join(", ");
+    }
+
+    function generatedPromptText() {
+      const profile = state.profile;
+      const focus = els.focusText.value.trim();
+      const avoid = els.avoidText.value.trim();
+      const context = els.contextText.value.trim();
+      const selectedOutcome = els.outcomeSelect.value;
+      const detectedOutcomes = profile?.outcomes?.map(field => field.name) ?? [];
+      const outcomeLine = selectedOutcome || (detectedOutcomes.length ? detectedOutcomes.join(", ") : "auto-detect any obvious business outcome fields");
+      const numericLine = profile ? getColumnLine(profile.numeric, "identify numeric metrics from the dataset") : "identify numeric metrics from the dataset";
+      const categoricalLine = profile ? getColumnLine(profile.categorical, "identify useful categorical segments from the dataset") : "identify useful categorical segments from the dataset";
+      const rowText = profile ? `${profile.rows.length.toLocaleString()} rows and ${profile.columns.length.toLocaleString()} columns` : "the uploaded dataset";
+
+      const lines = [
+        "Create the full Archimedes data intelligence report from this dataset.",
+        "",
+        `Dataset context: ${state.fileName ? state.fileName + " with " : ""}${rowText}.`,
+        context ? `Business context: ${context}` : "Business context: The user wants a practical business report, not a generic dashboard summary.",
+        `Report mode: ${els.reportMode.value}.`,
+        `Audience: Write for a ${els.audience.value}.`,
+        `Recommendation style: ${els.recommendationStyle.value}.`,
+        "",
+        "Primary user goal:",
+        focus || "- Identify the most important business issue in the data, quantify its impact, explain likely root causes, and recommend specific next actions.",
+        "",
+        "Dataset-aware focus:",
+        `- Outcome fields to inspect: ${outcomeLine}.`,
+        `- Numeric metrics likely worth analyzing: ${numericLine}.`,
+        `- Segment fields likely worth analyzing: ${categoricalLine}.`,
+        "",
+        "Required analysis behavior:",
+        "- Be specific to this dataset. Do not produce broad generic dashboard commentary.",
+        "- Use actual computed rates, grouped metrics, correlations, and segment results when available.",
+        "- Never guess channel, category, customer, or segment rates when they can be calculated from the data.",
+        "- Separate confirmed findings from hypotheses. Label hypotheses clearly.",
+        "- Do not make unsupported model accuracy claims, dollar recovery claims, or superlatives unless directly calculated from the provided statistics.",
+        "- If annualizing from a partial-period dataset, clearly label the result as an annualized estimate.",
+        "- Tie every recommendation to evidence in the data.",
+        "- Prioritize recommendations by business impact and implementation difficulty.",
+        "- Include what the business should measure next.",
+        "",
+        "Domain guardrails:",
+        "- If a product, SKU, or channel is already at high stockout risk, do not recommend discounting that same item because it may accelerate the stockout. Recommend discounting substitutes, available alternatives, or overstock instead.",
+        "- If the dataset includes binary outcome fields such as stockout, churn, default, fraud, conversion, win/loss, retention, or late payment, compute outcome rates by relevant categorical segments.",
+        "- If the report discusses marketing performance, distinguish attention metrics from real intent signals such as inquiries, replies, qualified leads, demos, purchases, or renewals.",
+        "",
+        "Avoid:",
+        avoid || "- Avoid vague advice, invented benchmarks, unsupported causality, and recommendations that require paid tools unless explicitly justified.",
+        "",
+        "Expected report sections:",
+        "1. Executive Summary",
+        "2. Dataset Health Audit",
+        "3. Key Business Problem",
+        "4. Statistical Deep Dive",
+        "5. Category / Channel / Segment Analysis",
+        "6. Pattern and Correlation Analysis",
+        "7. Root Cause Analysis",
+        "8. Business Recommendations",
+        "9. Risk Flags",
+        "10. What To Measure Next",
+        "11. Appendix / Raw Statistics",
+        "",
+        "Make the final report polished enough for a public-facing product demo while staying honest about what is directly supported by the data."
+      ];
+
+      return lines.join("\n");
+    }
+
+    function generatePrompt() {
+      const text = generatedPromptText();
+      els.generatedPrompt.classList.remove("empty");
+      els.generatedPrompt.textContent = text;
+    }
+
+    async function copyPrompt() {
+      const text = els.generatedPrompt.textContent.trim();
+      if (!text || els.generatedPrompt.classList.contains("empty")) {
+        generatePrompt();
+      }
+
+      try {
+        await navigator.clipboard.writeText(els.generatedPrompt.textContent);
+        els.copyBtn.textContent = "Copied";
+        setTimeout(() => {
+          els.copyBtn.textContent = "Copy Prompt";
+        }, 1400);
+      } catch (error) {
+        els.copyBtn.textContent = "Select Text";
+        els.generatedPrompt.focus();
+      }
+    }
+
+    function handleFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const rawRows = parseCSV(String(reader.result || ""));
+        state.fileName = file.name;
+        state.profile = profileRows(rawRows);
+        renderProfile();
+        generatePrompt();
+      };
+      reader.readAsText(file);
+    }
+
+    els.csvFile.addEventListener("change", event => {
+      handleFile(event.target.files?.[0]);
+    });
+
+    els.dropzone.addEventListener("dragover", event => {
+      event.preventDefault();
+      els.dropzone.style.borderColor = "var(--green)";
+    });
+
+    els.dropzone.addEventListener("dragleave", () => {
+      els.dropzone.style.borderColor = "";
+    });
+
+    els.dropzone.addEventListener("drop", event => {
+      event.preventDefault();
+      els.dropzone.style.borderColor = "";
+      handleFile(event.dataTransfer.files?.[0]);
+    });
+
+    els.generateBtn.addEventListener("click", generatePrompt);
+    els.copyBtn.addEventListener("click", copyPrompt);
+    els.resetBtn.addEventListener("click", () => {
+      els.focusText.value = "";
+      els.avoidText.value = "";
+      els.contextText.value = "";
+      els.reportMode.value = "Find the biggest business problem";
+      els.audience.value = "business owner or founder";
+      els.recommendationStyle.value = "balanced and practical";
+      els.outcomeSelect.value = "";
+      generatePrompt();
+    });
+
+    ["reportMode", "audience", "recommendationStyle", "outcomeSelect", "focusText", "avoidText", "contextText"].forEach(id => {
+      els[id].addEventListener("input", generatePrompt);
+      els[id].addEventListener("change", generatePrompt);
+    });
+  </script>
+</body>
+</html>
