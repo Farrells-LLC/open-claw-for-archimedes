@@ -1,0 +1,71 @@
+<!--
+  Archimedes GA4 tracking draft.
+  Replace G-XXXXXXXXXX with the real GA4 Measurement ID before using.
+  Add this once on each public website page, preferably in the <head>.
+-->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX', {
+    anonymize_ip: true
+  });
+
+  function archTrack(eventName, params) {
+    if (typeof gtag !== 'function') return;
+    gtag('event', eventName, Object.assign({
+      app_name: 'archimedes'
+    }, params || {}));
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-arch-report-link]').forEach(function (link) {
+      link.addEventListener('click', function () {
+        archTrack('arch_report_example_click', {
+          report_name: link.getAttribute('data-arch-report-link') || link.textContent.trim()
+        });
+      });
+    });
+
+    document.querySelectorAll('a[href^="mailto:"]').forEach(function (link) {
+      link.addEventListener('click', function () {
+        archTrack('arch_email_click', {
+          link_text: link.textContent.trim() || 'email_link'
+        });
+      });
+    });
+
+    document.querySelectorAll('[data-arch-demo-link]').forEach(function (link) {
+      link.addEventListener('click', function () {
+        archTrack('arch_demo_click', {
+          link_text: link.textContent.trim() || 'demo_link'
+        });
+      });
+    });
+
+    var contactSection = document.querySelector('[data-arch-contact-section]');
+    if (contactSection && 'IntersectionObserver' in window) {
+      var seenContact = false;
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!seenContact && entry.isIntersecting) {
+            seenContact = true;
+            archTrack('arch_contact_section_view');
+            observer.disconnect();
+          }
+        });
+      }, { threshold: 0.35 });
+      observer.observe(contactSection);
+    }
+  });
+</script>
+
+<!--
+  Markup examples:
+
+  <a href="/reports/ecommerce-example" data-arch-report-link="ecommerce_stockout_margin">View example report</a>
+  <section id="contact" data-arch-contact-section>...</section>
+  <a href="mailto:you@example.com">Email us</a>
+  <a href="/demo" data-arch-demo-link>Request demo</a>
+-->
