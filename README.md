@@ -12,6 +12,8 @@ Start here:
 - [[TOOLS]] - local tool notes
 - [[second-brain/README|Second Brain]] - structured knowledge base
 - [[directives/README|Directives]] - repeatable workflows and SOPs
+- [[second-brain/projects/archimedes-marketing|Archimedes Marketing]] - marketing memory hub
+- [[second-brain/projects/model-design|Model Design]] - model design memory hub
 
 Daily raw logs live in [[memory/]]. Structured summaries and durable knowledge live in [[second-brain/]].
 
@@ -28,4 +30,3 @@ Open this folder as an Obsidian vault. The included `.obsidian/` settings enable
 
 - Dataview
 - Templater
-
