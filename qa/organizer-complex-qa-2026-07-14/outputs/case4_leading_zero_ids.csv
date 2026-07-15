@@ -1,0 +1,7 @@
+customer_id,name,segment,last_order_date,orders
+001,Acme,A,,
+002,Beacon,B,,
+003,Coda,A,,
+1,,,2026-06-01,3
+2,,,2026-06-03,1
+3,,,2026-06-05,4

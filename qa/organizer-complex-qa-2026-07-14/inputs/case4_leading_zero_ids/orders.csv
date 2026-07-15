@@ -1,0 +1,4 @@
+customer_id,last_order_date,orders
+1,2026-06-01,3
+2,2026-06-03,1
+3,2026-06-05,4

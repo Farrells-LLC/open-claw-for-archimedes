@@ -1,0 +1,10 @@
+order_id,customer_id,sku,order_date,qty,revenue,customer_name,segment,product_name,category,unit_cost
+O1001,C001,SKU-RED-M,2026-06-01,2,120.00,Acme Retail,VIP,,,
+O1003,C001,SKU-BLU-S,2026-06-02,3,150.00,Acme Retail,VIP,,,
+O1002,C002,SKU-BLK-L,2026-06-01,1,80.00,Northstar Shop,New,,,
+O1004,C003,SKU-RED-M,2026-06-03,1,60.00,Lake Goods,Repeat,,,
+O1005,C004,SKU-GRN-M,2026-06-04,2,110.00,,,,,
+,,SKU-RED-M,,,,,,Red Hoodie M,Apparel,24.50
+,,SKU-BLK-L,,,,,,Black Hoodie L,Apparel,26.00
+,,SKU-BLU-S,,,,,,Blue Tee S,Tops,9.75
+,,SKU-GRN-M,,,,,,Green Jogger M,Bottoms,31.25

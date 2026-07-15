@@ -1,0 +1,5 @@
+order_id,order_date,revenue,discount_pct,region
+J1,2026-01-03,,,NE
+J2,2026-01-04,,,SW
+F1,2026-02-01,950.25,0.15,NE
+F2,2026-02-02,700.0,0.0,MW

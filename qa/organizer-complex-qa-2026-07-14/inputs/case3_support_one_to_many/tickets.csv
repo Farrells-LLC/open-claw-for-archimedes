@@ -1,0 +1,6 @@
+ticket_id,customer_id,severity
+T1,C001,low
+T2,C001,high
+T3,C002,medium
+T4,C002,high
+T5,C002,high

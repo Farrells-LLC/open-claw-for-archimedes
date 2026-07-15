@@ -1,0 +1,516 @@
+{
+  "generated_at": "2026-07-14T20:00:00-04:00",
+  "note": "Lightweight standard-library harness mirrors the local organizer executor behavior because app dependencies/auth were unavailable in this shell. It tests execution/validation behavior with explicit plans, not the AI plan generator.",
+  "cases": [
+    {
+      "case_id": "case1_ecom_multikey",
+      "title": "Ecommerce orders need customer_id and sku enrichment",
+      "status": "fail",
+      "input_files": [
+        "orders.csv",
+        "customers.csv",
+        "products.csv"
+      ],
+      "plan": {
+        "merge_strategy": "join",
+        "merge_key": "customer_id",
+        "transformations": []
+      },
+      "rows": 9,
+      "cols": 11,
+      "validation": {
+        "passed": true,
+        "warnings": [
+          "Fallback append used for 1 file(s): [{'file': 'products.csv', 'reason': \"'customer_id'\", 'action': 'fallback_append'}]",
+          "Merge key 'customer_id' not present in every file"
+        ],
+        "expectation": {
+          "merge_strategy": "join",
+          "merge_key": "customer_id",
+          "input_total_rows": 12,
+          "input_row_counts": {
+            "orders.csv": 5,
+            "customers.csv": 3,
+            "products.csv": 4
+          },
+          "input_column_counts": {
+            "orders.csv": 6,
+            "customers.csv": 3,
+            "products.csv": 4
+          },
+          "output_rows": 9,
+          "output_columns": 11,
+          "expected_min_rows": 4,
+          "expected_max_rows": 4,
+          "join_key_diagnostics": {
+            "key_available_in_all_files": false,
+            "unique_key_counts": {
+              "orders.csv": 4,
+              "customers.csv": 3
+            },
+            "missing_key_counts": {
+              "orders.csv": 0,
+              "customers.csv": 0
+            },
+            "distinct_key_union_count": 4
+          }
+        }
+      },
+      "issues": [
+        {
+          "assertion": "No fallback append should be needed for multi-file enrichment",
+          "detail": [
+            "Fallback append used for 1 file(s): [{'file': 'products.csv', 'reason': \"'customer_id'\", 'action': 'fallback_append'}]",
+            "Merge key 'customer_id' not present in every file"
+          ]
+        },
+        {
+          "assertion": "Every order row should retain product category",
+          "detail": "some order rows missing category"
+        }
+      ],
+      "output": "archimedes_data_organizer_qa_2026-07-14/outputs/case1_ecom_multikey.csv",
+      "preview": [
+        {
+          "order_id": "O1001",
+          "customer_id": "C001",
+          "sku": "SKU-RED-M",
+          "order_date": "2026-06-01",
+          "qty": "2",
+          "revenue": "120.00",
+          "customer_name": "Acme Retail",
+          "segment": "VIP"
+        },
+        {
+          "order_id": "O1003",
+          "customer_id": "C001",
+          "sku": "SKU-BLU-S",
+          "order_date": "2026-06-02",
+          "qty": "3",
+          "revenue": "150.00",
+          "customer_name": "Acme Retail",
+          "segment": "VIP"
+        },
+        {
+          "order_id": "O1002",
+          "customer_id": "C002",
+          "sku": "SKU-BLK-L",
+          "order_date": "2026-06-01",
+          "qty": "1",
+          "revenue": "80.00",
+          "customer_name": "Northstar Shop",
+          "segment": "New"
+        },
+        {
+          "order_id": "O1004",
+          "customer_id": "C003",
+          "sku": "SKU-RED-M",
+          "order_date": "2026-06-03",
+          "qty": "1",
+          "revenue": "60.00",
+          "customer_name": "Lake Goods",
+          "segment": "Repeat"
+        },
+        {
+          "order_id": "O1005",
+          "customer_id": "C004",
+          "sku": "SKU-GRN-M",
+          "order_date": "2026-06-04",
+          "qty": "2",
+          "revenue": "110.00"
+        }
+      ]
+    },
+    {
+      "case_id": "case2_monthly_stack_currency",
+      "title": "Monthly sales exports with renamed headers, dates, currency, and percents",
+      "status": "fail",
+      "input_files": [
+        "jan_export.csv",
+        "feb_export.csv"
+      ],
+      "plan": {
+        "merge_strategy": "append",
+        "merge_key": null,
+        "transformations": [
+          {
+            "type": "rename_column",
+            "file": "jan_export.csv",
+            "from": "Order ID",
+            "to": "order_id"
+          },
+          {
+            "type": "rename_column",
+            "file": "jan_export.csv",
+            "from": "Date",
+            "to": "order_date"
+          },
+          {
+            "type": "rename_column",
+            "file": "jan_export.csv",
+            "from": "Revenue",
+            "to": "revenue"
+          },
+          {
+            "type": "rename_column",
+            "file": "jan_export.csv",
+            "from": "Discount",
+            "to": "discount_pct"
+          },
+          {
+            "type": "rename_column",
+            "file": "jan_export.csv",
+            "from": "Region",
+            "to": "region"
+          },
+          {
+            "type": "standardize_dates",
+            "column": "order_date"
+          },
+          {
+            "type": "cast_type",
+            "column": "revenue",
+            "target_type": "float"
+          },
+          {
+            "type": "cast_type",
+            "column": "discount_pct",
+            "target_type": "float"
+          }
+        ]
+      },
+      "rows": 4,
+      "cols": 5,
+      "validation": {
+        "passed": true,
+        "warnings": [],
+        "expectation": {
+          "merge_strategy": "append",
+          "merge_key": null,
+          "input_total_rows": 4,
+          "input_row_counts": {
+            "jan_export.csv": 2,
+            "feb_export.csv": 2
+          },
+          "input_column_counts": {
+            "jan_export.csv": 5,
+            "feb_export.csv": 5
+          },
+          "output_rows": 4,
+          "output_columns": 5,
+          "expected_min_rows": 2,
+          "expected_max_rows": 4
+        }
+      },
+      "issues": [
+        {
+          "assertion": "Revenue should not be lost during currency cleanup",
+          "detail": "null revenue count 2"
+        },
+        {
+          "assertion": "Discount percent should parse from percent strings",
+          "detail": "null discount count 2"
+        }
+      ],
+      "output": "archimedes_data_organizer_qa_2026-07-14/outputs/case2_monthly_stack_currency.csv",
+      "preview": [
+        {
+          "order_id": "J1",
+          "order_date": "2026-01-03",
+          "revenue": null,
+          "discount_pct": null,
+          "region": "NE"
+        },
+        {
+          "order_id": "J2",
+          "order_date": "2026-01-04",
+          "revenue": null,
+          "discount_pct": null,
+          "region": "SW"
+        },
+        {
+          "order_id": "F1",
+          "order_date": "2026-02-01",
+          "revenue": "950.25",
+          "discount_pct": "0.15",
+          "region": "NE"
+        },
+        {
+          "order_id": "F2",
+          "order_date": "2026-02-02",
+          "revenue": "700.0",
+          "discount_pct": "0.0",
+          "region": "MW"
+        }
+      ]
+    },
+    {
+      "case_id": "case3_support_one_to_many",
+      "title": "Customer health joined to support tickets creates grain change",
+      "status": "fail",
+      "input_files": [
+        "accounts.csv",
+        "tickets.csv"
+      ],
+      "plan": {
+        "merge_strategy": "join",
+        "merge_key": "customer_id",
+        "transformations": []
+      },
+      "rows": 6,
+      "cols": 5,
+      "validation": {
+        "passed": true,
+        "warnings": [],
+        "expectation": {
+          "merge_strategy": "join",
+          "merge_key": "customer_id",
+          "input_total_rows": 8,
+          "input_row_counts": {
+            "accounts.csv": 3,
+            "tickets.csv": 5
+          },
+          "input_column_counts": {
+            "accounts.csv": 3,
+            "tickets.csv": 3
+          },
+          "output_rows": 6,
+          "output_columns": 5,
+          "expected_min_rows": 3,
+          "expected_max_rows": 3,
+          "join_key_diagnostics": {
+            "key_available_in_all_files": true,
+            "unique_key_counts": {
+              "accounts.csv": 3,
+              "tickets.csv": 2
+            },
+            "missing_key_counts": {
+              "accounts.csv": 0,
+              "tickets.csv": 0
+            },
+            "distinct_key_union_count": 3
+          }
+        }
+      },
+      "issues": [
+        {
+          "assertion": "Organizer should warn when one-to-many join changes customer-level grain",
+          "detail": "output rows 6; built-in warnings []"
+        }
+      ],
+      "output": "archimedes_data_organizer_qa_2026-07-14/outputs/case3_support_one_to_many.csv",
+      "preview": [
+        {
+          "customer_id": "C001",
+          "arr": "12000",
+          "health_score": "82",
+          "ticket_id": "T1",
+          "severity": "low"
+        },
+        {
+          "customer_id": "C001",
+          "arr": "12000",
+          "health_score": "82",
+          "ticket_id": "T2",
+          "severity": "high"
+        },
+        {
+          "customer_id": "C002",
+          "arr": "9000",
+          "health_score": "55",
+          "ticket_id": "T3",
+          "severity": "medium"
+        },
+        {
+          "customer_id": "C002",
+          "arr": "9000",
+          "health_score": "55",
+          "ticket_id": "T4",
+          "severity": "high"
+        },
+        {
+          "customer_id": "C002",
+          "arr": "9000",
+          "health_score": "55",
+          "ticket_id": "T5",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "case_id": "case4_leading_zero_ids",
+      "title": "Customer IDs with leading zeros should match numeric-looking IDs safely",
+      "status": "fail",
+      "input_files": [
+        "customers.csv",
+        "orders.csv"
+      ],
+      "plan": {
+        "merge_strategy": "join",
+        "merge_key": "customer_id",
+        "transformations": [
+          {
+            "type": "cast_type",
+            "column": "customer_id",
+            "target_type": "string"
+          }
+        ]
+      },
+      "rows": 6,
+      "cols": 5,
+      "validation": {
+        "passed": true,
+        "warnings": [],
+        "expectation": {
+          "merge_strategy": "join",
+          "merge_key": "customer_id",
+          "input_total_rows": 6,
+          "input_row_counts": {
+            "customers.csv": 3,
+            "orders.csv": 3
+          },
+          "input_column_counts": {
+            "customers.csv": 3,
+            "orders.csv": 3
+          },
+          "output_rows": 6,
+          "output_columns": 5,
+          "expected_min_rows": 3,
+          "expected_max_rows": 6,
+          "join_key_diagnostics": {
+            "key_available_in_all_files": true,
+            "unique_key_counts": {
+              "customers.csv": 3,
+              "orders.csv": 3
+            },
+            "missing_key_counts": {
+              "customers.csv": 0,
+              "orders.csv": 0
+            },
+            "distinct_key_union_count": 6
+          }
+        }
+      },
+      "issues": [
+        {
+          "assertion": "IDs should match despite leading-zero formatting differences",
+          "detail": "got 6 rows; matched orders 3"
+        },
+        {
+          "assertion": "Validation should flag low/no match rate",
+          "detail": "built-in warnings []"
+        }
+      ],
+      "output": "archimedes_data_organizer_qa_2026-07-14/outputs/case4_leading_zero_ids.csv",
+      "preview": [
+        {
+          "customer_id": "001",
+          "name": "Acme",
+          "segment": "A"
+        },
+        {
+          "customer_id": "002",
+          "name": "Beacon",
+          "segment": "B"
+        },
+        {
+          "customer_id": "003",
+          "name": "Coda",
+          "segment": "A"
+        },
+        {
+          "customer_id": "1",
+          "last_order_date": "2026-06-01",
+          "orders": "3"
+        },
+        {
+          "customer_id": "2",
+          "last_order_date": "2026-06-03",
+          "orders": "1"
+        }
+      ]
+    },
+    {
+      "case_id": "case5_semicolon_parse_append",
+      "title": "Semicolon-delimited export gets split and appended to clean CRM rows",
+      "status": "pass",
+      "input_files": [
+        "raw_export.csv",
+        "crm.csv"
+      ],
+      "plan": {
+        "merge_strategy": "append",
+        "merge_key": null,
+        "transformations": [
+          {
+            "type": "parse_delimited_column",
+            "file": "raw_export.csv",
+            "column": "raw",
+            "delimiter": ";",
+            "new_columns": [
+              "customer_id",
+              "email",
+              "status",
+              "signup_date"
+            ]
+          },
+          {
+            "type": "standardize_dates",
+            "column": "signup_date"
+          }
+        ]
+      },
+      "rows": 4,
+      "cols": 4,
+      "validation": {
+        "passed": true,
+        "warnings": [],
+        "expectation": {
+          "merge_strategy": "append",
+          "merge_key": null,
+          "input_total_rows": 4,
+          "input_row_counts": {
+            "raw_export.csv": 2,
+            "crm.csv": 2
+          },
+          "input_column_counts": {
+            "raw_export.csv": 1,
+            "crm.csv": 4
+          },
+          "output_rows": 4,
+          "output_columns": 4,
+          "expected_min_rows": 2,
+          "expected_max_rows": 4
+        }
+      },
+      "issues": [],
+      "output": "archimedes_data_organizer_qa_2026-07-14/outputs/case5_semicolon_parse_append.csv",
+      "preview": [
+        {
+          "customer_id": "C001",
+          "email": "a@example.com",
+          "status": "active",
+          "signup_date": "2026-07-01"
+        },
+        {
+          "customer_id": "C002",
+          "email": "b@example.com",
+          "status": "trial",
+          "signup_date": "2026-07-02"
+        },
+        {
+          "customer_id": "C003",
+          "email": "c@example.com",
+          "status": "active",
+          "signup_date": "2026-07-03"
+        },
+        {
+          "customer_id": "C004",
+          "email": "d@example.com",
+          "status": "churned",
+          "signup_date": "2026-07-04"
+        }
+      ]
+    }
+  ]
+}

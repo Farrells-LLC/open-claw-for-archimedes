@@ -1,0 +1,7 @@
+customer_id,arr,health_score,ticket_id,severity
+C001,12000,82,T1,low
+C001,12000,82,T2,high
+C002,9000,55,T3,medium
+C002,9000,55,T4,high
+C002,9000,55,T5,high
+C003,15000,70,,

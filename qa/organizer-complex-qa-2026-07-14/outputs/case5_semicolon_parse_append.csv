@@ -1,0 +1,5 @@
+customer_id,email,status,signup_date
+C001,a@example.com,active,2026-07-01
+C002,b@example.com,trial,2026-07-02
+C003,c@example.com,active,2026-07-03
+C004,d@example.com,churned,2026-07-04
