@@ -1,0 +1,3676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archimedes MD — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#1a9fd4;--bright:#00d4ff;--teal:#00b894;--emerald:#00c853;
+  --lime:#c6ff00;--gold:#ffd600;--coral:#ff4444;--orange:#ff6d00;
+  --magenta:#e040fb;--violet:#7c4dff;--lavender:#b39ddb;
+  --white:#f0faff;--muted:#7ecce8;
+  --bg:#060e1f;--panel:rgba(6,20,45,0.85);--border:rgba(0,212,255,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--white);font-family:'Outfit',sans-serif;min-height:100vh;display:flex;overflow-x:hidden}
+
+.swirl{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg at 15% 25%,rgba(26,159,212,.03) 0deg,transparent 60deg),
+             repeating-conic-gradient(from 45deg at 85% 75%,rgba(224,64,251,.025) 0deg,transparent 60deg);
+  animation:swirlA 25s ease-in-out infinite alternate}
+@keyframes swirlA{from{opacity:.5}to{opacity:1}}
+@keyframes cardGlow{
+  0%,100%{border-color:var(--border)}
+  50%{border-color:rgba(0,212,255,.35)}
+}
+@keyframes orgGlow{
+  from{box-shadow:0 0 10px rgba(224,64,251,.2);border-color:rgba(224,64,251,.3)}
+  to{box-shadow:0 0 30px rgba(224,64,251,.5);border-color:rgba(224,64,251,.7)}
+}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;z-index:50;
+  background:rgba(4,10,24,.95);backdrop-filter:blur(24px);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;
+  transition:transform .3s ease}
+.sidebar::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--bright),var(--magenta),var(--gold),var(--emerald),var(--bright));
+  background-size:200% 100%;animation:gradShift 4s linear infinite;pointer-events:none}
+@keyframes gradShift{to{background-position:200% 0}}
+
+.sidebar-logo{padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--border);text-decoration:none;display:block}
+.logo-text{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:900;letter-spacing:3px;
+  background:linear-gradient(90deg,var(--bright),var(--magenta),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-sub{font-size:.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+
+.nav-section{padding:.75rem 1rem .25rem;font-size:.6rem;letter-spacing:3px;text-transform:uppercase;
+  background:linear-gradient(90deg,var(--coral),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:.65rem 1.25rem;color:var(--muted);
+  text-decoration:none;font-size:.875rem;font-weight:500;transition:all .2s;
+  border-radius:8px;margin:.1rem .5rem;cursor:pointer;border:none;
+  background:none;width:calc(100% - 1rem);text-align:left;position:relative}
+.nav-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(to bottom,var(--bright),var(--magenta));
+  opacity:0;transition:opacity .2s;pointer-events:none}
+.nav-item:hover{background:rgba(0,212,255,.06);color:var(--white)}
+.nav-item:hover::before{opacity:1}
+.nav-item.active{background:rgba(0,212,255,.1);color:var(--bright)}
+.nav-item.active::before{opacity:1}
+.nav-icon{font-size:1rem;flex-shrink:0}
+
+.sidebar-bottom{margin-top:auto;padding:1rem;border-top:1px solid var(--border);position:relative}
+.user-pill{display:flex;align-items:center;gap:10px;padding:.75rem;border-radius:10px;
+  background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15)}
+.avatar{width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--bright),var(--violet));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;color:var(--bg);flex-shrink:0}
+.user-name{font-size:.82rem;font-weight:500}
+.user-plan{font-size:.68rem;background:linear-gradient(90deg,var(--bright),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* MAIN */
+.main{margin-left:240px;flex:1;min-width:0;position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{padding:1.25rem 2rem;background:rgba(4,10,24,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:40}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--bright),var(--magenta),transparent);pointer-events:none}
+.topbar h1{font-family:'Cinzel',serif;font-size:1.2rem;font-weight:700;letter-spacing:2px;
+  background:linear-gradient(90deg,var(--white),var(--bright));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.btn-new{padding:.55rem 1.4rem;border-radius:4px;font-family:'Outfit',sans-serif;
+  font-size:.8rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:all .25s;
+  background:linear-gradient(135deg,var(--sky),var(--violet));
+  color:var(--white);border:none;box-shadow:0 0 20px rgba(26,159,212,.3)}
+.btn-new:hover{box-shadow:0 0 40px rgba(26,159,212,.6);transform:translateY(-1px)}
+
+.content{padding:2rem;flex:1;min-width:0}
+.panel{display:none}.panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--panel);border-radius:16px;padding:1.1rem 1.5rem;margin-bottom:1rem;position:relative;border:1px solid transparent;animation:cardGlow 4s linear infinite}
+
+.card-title{font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:2.5px;
+  text-transform:uppercase;margin-bottom:1.25rem;
+  background:linear-gradient(90deg,var(--bright),var(--lavender));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* FORM */
+label{display:block;font-size:.72rem;color:var(--muted);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:.4rem;margin-top:1rem}
+label:first-child{margin-top:0}
+input[type=text],textarea,select{
+  width:100%;background:rgba(0,10,30,.7);
+  border:1px solid rgba(0,212,255,.25);border-radius:8px;
+  padding:.8rem 1rem;color:var(--white);
+  font-family:'Outfit',sans-serif;font-size:.9rem;
+  transition:all .25s;outline:none}
+input[type=text]:focus,textarea:focus,select:focus{
+  border-color:var(--bright);box-shadow:0 0 20px rgba(0,212,255,.15)}
+input[type=text]::placeholder,textarea::placeholder{color:rgba(126,204,232,.4)}
+textarea{min-height:110px;resize:vertical;line-height:1.6}
+select{
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237ecce8' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 1rem center;
+  padding-right:2.5rem;cursor:pointer}
+select:focus{border-color:var(--bright);box-shadow:0 0 20px rgba(0,212,255,.15)}
+select option{background:#060e1f;color:var(--white);padding:.5rem}
+select option:disabled{color:rgba(126,204,232,.4)}
+select option:checked{background:rgba(0,212,255,.15)}
+
+.btn-full{width:100%;padding:.9rem;border-radius:8px;
+  font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;
+  letter-spacing:1px;cursor:pointer;transition:all .25s;border:none;margin-top:1.25rem}
+.btn-generate{background:linear-gradient(135deg,var(--bright),var(--sky),var(--violet));color:var(--white);
+  box-shadow:0 0 30px rgba(0,212,255,.3)}
+.btn-generate:hover{box-shadow:0 0 50px rgba(0,212,255,.5);transform:translateY(-2px)}
+.btn-generate:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
+
+/* STREAM */
+.stream-area{display:none;margin-top:1.25rem}.stream-area.show{display:block}
+.stream-label{font-size:.65rem;letter-spacing:3px;text-transform:uppercase;margin-bottom:.6rem;
+  background:linear-gradient(90deg,var(--coral),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stream-box{background:rgba(0,8,25,.8);border:1px solid rgba(0,212,255,.15);
+  border-radius:10px;padding:1rem 1.25rem;font-size:.82rem;
+  font-family:'Courier New',monospace;line-height:1.7;color:#a8d8ea;
+  white-space:pre-wrap;word-break:break-word;max-height:320px;overflow-y:auto}
+.code-box{background:rgba(0,4,15,.9);border:1px solid rgba(124,77,255,.2);
+  border-radius:10px;padding:1rem 1.25rem;font-size:.78rem;
+  font-family:'Courier New',monospace;line-height:1.75;color:#b8d8f0;
+  white-space:pre-wrap;word-break:break-word;max-height:320px;overflow-y:auto;margin-top:.75rem}
+
+.progress{height:3px;background:rgba(0,212,255,.1);border-radius:2px;margin:.75rem 0;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .5s ease;width:0%;
+  background:linear-gradient(90deg,var(--bright),var(--magenta),var(--gold))}
+.health-preview{display:none;margin-bottom:1rem;background:rgba(0,8,25,.55);border:1px solid rgba(0,212,255,.14);border-radius:12px;padding:1rem}
+.health-preview-title{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;background:linear-gradient(90deg,var(--bright),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.75rem}
+.health-preview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:.65rem;margin-bottom:.75rem}
+.health-preview-metric{background:rgba(0,10,30,.55);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.7rem .8rem}
+.health-preview-val{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:700;color:var(--white);line-height:1.1}
+.health-preview-lbl{font-size:.62rem;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-top:4px}
+.health-preview-note{font-size:.8rem;color:var(--muted);line-height:1.55}
+.health-preview-cols{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.7rem}
+.health-preview-cols span{font-size:.68rem;border:1px solid rgba(0,212,255,.18);background:rgba(0,212,255,.05);color:var(--bright);border-radius:999px;padding:.22rem .5rem}
+.report-status{display:flex;align-items:flex-start;gap:.55rem;line-height:1.45}
+.report-status-text{display:flex;flex-direction:column;gap:2px}
+.report-status-main{font-size:.8rem;color:var(--gold);font-weight:600}
+.report-status-sub{font-size:.72rem;color:var(--muted)}
+
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:1rem}
+.stat-card{background:rgba(0,8,25,.7);border-radius:10px;padding:1rem;text-align:center;position:relative;border:1px solid transparent;animation:cardGlow 4s linear infinite}
+
+.stat-card-val{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:700;
+  background:linear-gradient(135deg,var(--bright),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-card-lbl{font-size:.65rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
+
+/* OVERVIEW */
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem}
+.ov-card{background:var(--panel);border-radius:14px;padding:1.25rem;border:1px solid rgba(0,212,255,.12)}
+.ov-val{font-family:'Cinzel',serif;font-size:2rem;font-weight:700;
+  background:linear-gradient(135deg,var(--bright),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ov-lbl{font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+
+/* MODEL CARDS */
+.model-list{display:flex;flex-direction:column;gap:.875rem;max-height:640px;overflow-y:auto;padding-right:.5rem;scrollbar-width:thin;scrollbar-color:rgba(0,212,255,.4) rgba(0,8,25,.3)}
+.model-list::-webkit-scrollbar{width:8px}
+.model-list::-webkit-scrollbar-track{background:rgba(0,8,25,.3);border-radius:4px}
+.model-list::-webkit-scrollbar-thumb{background:rgba(0,212,255,.4);border-radius:4px}
+.model-list::-webkit-scrollbar-thumb:hover{background:rgba(0,212,255,.6)}
+.model-card{background:rgba(0,8,25,.7);border:1px solid rgba(0,212,255,.12);border-radius:14px;
+  padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;transition:all .3s}
+.model-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-2px)}
+.model-icon{width:44px;height:44px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:.7rem;font-weight:700;font-family:'Cinzel',serif;letter-spacing:1px}
+.model-info{flex:1;min-width:0}
+.model-name{font-size:.95rem;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.model-meta{font-size:.75rem;color:var(--muted)}
+.model-tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:.65rem;padding:2px 8px;border-radius:999px;border:1px solid;font-weight:500}
+.model-actions{display:flex;flex-direction:column;gap:.5rem;flex-shrink:0}
+.btn-xs{padding:.4rem .9rem;border-radius:6px;font-size:.75rem;font-weight:600;
+  cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif;border:none}
+.btn-xs.outline{background:transparent;border:1px solid rgba(0,212,255,.3);color:var(--bright)}
+.btn-xs.outline:hover{background:rgba(0,212,255,.1)}
+.btn-xs.danger{background:transparent;border:1px solid rgba(255,68,68,.3);color:var(--coral)}
+.btn-xs.danger:hover{background:rgba(255,68,68,.08)}
+.badge-ready{display:inline-block;font-size:.65rem;padding:3px 8px;border-radius:999px;
+  background:rgba(0,184,148,.12);color:var(--teal);border:1px solid rgba(0,184,148,.25)}
+
+.empty{text-align:center;padding:4rem 2rem;color:var(--muted)}
+.empty-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.3}
+.empty p{font-size:.9rem;line-height:1.6}
+
+/* UPLOAD ZONE */
+.upload-zone{border:1.5px dashed rgba(0,212,255,.3);border-radius:12px;
+  padding:1.25rem;text-align:center;transition:all .3s;margin-bottom:.75rem}
+.upload-zone.drag{border-color:var(--bright);background:rgba(0,212,255,.05)}
+.upload-btn{display:inline-block;padding:.65rem 1.75rem;
+  background:linear-gradient(135deg,var(--bright),var(--violet));
+  color:var(--white);border:none;border-radius:6px;cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:.875rem;font-weight:600;letter-spacing:1px}
+
+/* BILLING */
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.875rem}
+.plan-card{background:rgba(0,8,25,.7);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem}
+.plan-card.featured{border-color:var(--bright)}
+.plan-tier{font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:3px;color:var(--muted);margin-bottom:.4rem}
+.plan-price{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:700;
+  background:linear-gradient(135deg,var(--white),var(--bright));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.plan-desc{font-size:.78rem;color:var(--muted);margin:.4rem 0 1rem;line-height:1.5}
+.plan-btn{display:block;width:100%;padding:.65rem;border-radius:6px;
+  font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;
+  text-align:center;cursor:pointer;text-decoration:none;transition:all .2s;
+  border:1px solid rgba(0,212,255,.3);color:var(--bright);background:transparent}
+.plan-btn:hover{background:rgba(0,212,255,.08)}
+.plan-btn.hot{background:linear-gradient(135deg,var(--sky),var(--violet));color:var(--white);border:none}
+
+/* ALGORITHM TOOLTIP */
+.algo-wrap{display:flex;align-items:center;gap:.5rem;margin-top:1rem}
+/* ── Custom dropdown ── */
+.cd-wrap{position:relative;width:100%;user-select:none}
+.cd-trigger{
+  width:100%;background:rgba(0,10,30,.7);
+  border:1px solid rgba(0,212,255,.25);border-radius:8px;
+  padding:.8rem 2.5rem .8rem 1rem;color:var(--white);
+  font-family:'Outfit',sans-serif;font-size:.9rem;
+  cursor:pointer;transition:all .25s;text-align:left;
+  display:flex;align-items:center;justify-content:space-between;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd-trigger:hover,.cd-trigger.open{border-color:var(--bright);box-shadow:0 0 20px rgba(0,212,255,.15)}
+.cd-arrow{flex-shrink:0;margin-left:.5rem;transition:transform .2s;color:var(--muted);font-size:.7rem}
+.cd-trigger.open .cd-arrow{transform:rotate(180deg)}
+.cd-list{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:900;
+  background:#070f22;border:1px solid rgba(0,212,255,.25);border-radius:8px;
+  overflow-y:auto;max-height:260px;display:none;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  scrollbar-width:thin;scrollbar-color:rgba(0,212,255,.3) transparent}
+.cd-list::-webkit-scrollbar{width:6px}
+.cd-list::-webkit-scrollbar-thumb{background:rgba(0,212,255,.3);border-radius:3px}
+.cd-list.open{display:block}
+.cd-option{
+  padding:.65rem 1rem;font-family:'Outfit',sans-serif;font-size:.88rem;
+  color:var(--muted);cursor:pointer;transition:background .15s,color .15s;
+  border-bottom:1px solid rgba(0,212,255,.05)}
+.cd-option:last-child{border-bottom:none}
+.cd-option:hover{background:rgba(0,212,255,.08);color:var(--white)}
+.cd-option.selected{color:var(--bright);background:rgba(0,212,255,.1)}
+.cd-option.disabled{color:rgba(126,204,232,.3);cursor:default;font-style:italic}
+.cd-option.disabled:hover{background:none}
+
+.algo-wrap label{margin-top:0}
+.algo-tip-btn{width:16px;height:16px;border-radius:50%;background:rgba(0,212,255,.15);
+  border:1px solid rgba(0,212,255,.3);color:var(--bright);font-size:.65rem;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  position:relative;transition:background .2s}
+.algo-tip-btn:hover{background:rgba(0,212,255,.3)}
+.algo-tip-box{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;
+  transform:translateX(-50%);background:rgba(6,14,31,.97);
+  border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:.75rem 1rem;
+  font-size:.78rem;color:var(--muted);line-height:1.6;width:300px;z-index:100;
+  pointer-events:none;text-align:left}
+.algo-tip-box::after{content:'';position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);border:6px solid transparent;
+  border-top-color:rgba(0,212,255,.25)}
+.algo-tip-btn:hover .algo-tip-box,
+.algo-tip-btn:focus .algo-tip-box{display:block}
+
+/* ── LIGHT MODE ── */
+body.light-mode{
+  --bg:#0d1a35;
+  --panel:rgba(20,40,80,0.85);
+  --border:rgba(0,212,255,0.25);
+  --white:#e8f4ff;
+  --muted:#9dd4ee;
+  background:var(--bg);
+}
+body.light-mode .sidebar{background:rgba(15,28,60,0.98)}
+body.light-mode .topbar{background:rgba(13,26,53,0.95)}
+body.light-mode input[type=text],body.light-mode textarea,body.light-mode select{
+  background:rgba(20,40,80,0.7);color:#e8f4ff;border-color:rgba(0,212,255,0.3)}
+body.light-mode .stream-box{background:rgba(15,32,65,0.9);color:#b8ddf5}
+body.light-mode .code-box{background:rgba(10,22,48,0.9);color:#b8ddf5}
+body.light-mode .model-card,body.light-mode .stat-card,
+body.light-mode .fi-wrap,body.light-mode .ov-card,
+body.light-mode .plan-card{background:rgba(20,42,85,0.8)}
+body.light-mode .algo-tip-box{background:rgba(15,30,65,0.99);color:#9dd4ee}
+body.light-mode .user-pill{background:rgba(0,212,255,0.08)}
+body.light-mode .chat-window{background:rgba(15,28,60,0.98);border-color:rgba(0,212,255,.25)}
+body.light-mode .chat-messages{background:rgba(13,26,53,.95)}
+body.light-mode .chat-msg.bot{background:rgba(20,42,85,.9);color:#e8f4ff}
+body.light-mode .chat-input-wrap{background:rgba(13,26,53,.98);border-color:rgba(0,212,255,.2)}
+body.light-mode #chat-text-input{background:rgba(20,40,80,.8);color:#e8f4ff;border-color:rgba(0,212,255,.25)}
+
+/* ── TOAST — top-right, fully in-app, unmistakably branded ── */
+#toast-container{
+  position:fixed;top:1.25rem;right:1.5rem;z-index:99999;
+  display:flex;flex-direction:column;gap:.75rem;
+  pointer-events:none;max-width:360px;
+}
+.toast{
+  display:flex;align-items:center;gap:.875rem;
+  padding:1rem 1.375rem;border-radius:14px;
+  font-size:.9rem;font-weight:500;pointer-events:auto;
+  min-width:280px;position:relative;overflow:hidden;
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  box-shadow:0 8px 40px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.35);
+  animation:toastIn .35s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.toast::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:14px 14px 0 0;
+  background:linear-gradient(90deg,var(--bright),var(--magenta));
+  pointer-events:none;
+}
+.toast.success{background:rgba(6,20,45,.97);border:1px solid rgba(0,200,83,.4);color:#7fffb8}
+.toast.success::before{background:linear-gradient(90deg,var(--teal),var(--emerald))}
+.toast.error{background:rgba(6,20,45,.97);border:1px solid rgba(255,68,68,.4);color:#ff9090}
+.toast.error::before{background:linear-gradient(90deg,var(--coral),#ff6600)}
+.toast.info{background:rgba(6,20,45,.97);border:1px solid rgba(0,212,255,.35);color:var(--bright)}
+.toast.warning{background:rgba(6,20,45,.97);border:1px solid rgba(255,214,0,.35);color:var(--gold)}
+.toast.warning::before{background:linear-gradient(90deg,var(--gold),var(--orange))}
+.toast-icon{
+  font-size:1.15rem;flex-shrink:0;
+  width:30px;height:30px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.07);
+}
+.toast-label{
+  font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:2px;
+  text-transform:uppercase;opacity:.6;margin-bottom:2px;
+}
+.toast-msg{font-size:.875rem;line-height:1.4}
+@keyframes toastIn{from{opacity:0;transform:translateX(50px) scale(.94)}to{opacity:1;transform:translateX(0) scale(1)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0) scale(1)}to{opacity:0;transform:translateX(50px) scale(.94)}}
+
+/* SIDEBAR MANDALA */
+.mandala-side{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
+  width:180px;height:180px;opacity:.15;animation:spinCW 40s linear infinite;pointer-events:none}
+@keyframes spinCW{to{transform:translateX(-50%) rotate(360deg)}}
+.theme-toggle{padding:.45rem .85rem;border-radius:4px;font-size:.8rem;font-weight:600;
+  cursor:pointer;border:1px solid rgba(0,212,255,.3);background:transparent;
+  color:var(--bright);transition:all .2s;white-space:nowrap}
+.theme-toggle:hover{background:rgba(0,212,255,.1)}
+
+/* FEATURE IMPORTANCE CHART */
+.fi-wrap{margin-top:1.25rem;background:rgba(0,8,25,.7);border:1px solid rgba(0,212,255,.12);border-radius:12px;padding:1.25rem}
+.fi-title{font-size:.65rem;letter-spacing:3px;text-transform:uppercase;margin-bottom:1rem;
+  background:linear-gradient(90deg,var(--bright),var(--magenta));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.fi-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.55rem}
+.fi-label{font-size:.75rem;color:var(--muted);width:140px;flex-shrink:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.fi-bar-wrap{flex:1;background:rgba(0,212,255,.08);border-radius:4px;height:10px;overflow:hidden}
+.fi-bar{height:100%;border-radius:4px;
+  background:linear-gradient(90deg,var(--bright),var(--violet));transition:width .6s ease}
+.fi-pct{font-size:.72rem;color:var(--muted);width:38px;flex-shrink:0;text-align:right}
+
+@media(max-width:768px){.fi-label{width:90px;font-size:.7rem}}
+.hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;
+  cursor:pointer;padding:.4rem;background:none;border:none;flex-shrink:0}
+.hamburger span{display:block;width:22px;height:2px;background:var(--bright);
+  border-radius:2px;transition:all .3s}
+
+/* MOBILE OVERLAY */
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:49;backdrop-filter:blur(2px)}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,.6)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .mob-overlay.show{display:block}
+  .topbar{padding:1rem 1.25rem;flex-wrap:wrap;row-gap:.6rem}
+  .topbar-actions{flex-wrap:wrap;gap:.5rem}
+  .topbar-actions .btn-new,.topbar-actions .theme-toggle{padding:.42rem .75rem;font-size:.74rem}
+  .content{padding:1.25rem}
+  #toast-container{top:1rem;right:1rem;max-width:calc(100vw - 2rem)}
+  .toast{min-width:0;width:100%}
+}
+
+/* ── DATA REPORT BUTTON ── */
+@keyframes shimmerSlide{0%{background-position:200% center}100%{background-position:-200% center}}
+@keyframes orgSphereSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+#org-preview-wrap{scrollbar-width:thin;scrollbar-color:rgba(0,212,255,.4) rgba(0,8,25,.3)}
+#org-preview-wrap::-webkit-scrollbar{width:8px;height:8px}
+#org-preview-wrap::-webkit-scrollbar-track{background:rgba(0,8,25,.3);border-radius:4px}
+#org-preview-wrap::-webkit-scrollbar-thumb{background:rgba(0,212,255,.4);border-radius:4px}
+#org-preview-wrap::-webkit-scrollbar-thumb:hover{background:rgba(0,212,255,.6)}
+.btn-report{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.6rem;
+  border-radius:8px;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;
+  letter-spacing:.5px;cursor:pointer;transition:all .3s;border:none;margin-top:1.25rem;
+  background:linear-gradient(135deg,#4a00e0,#7c4dff,#00d4ff,#7c4dff,#4a00e0);
+  background-size:300% auto;
+  color:var(--white);
+  box-shadow:0 0 28px rgba(124,77,255,.45);
+  animation:shimmerSlide 3s linear infinite}
+.btn-report:hover{box-shadow:0 0 50px rgba(124,77,255,.7);transform:translateY(-2px)}
+.btn-report:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none;animation:none}
+.report-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--white);animation:rpulse 1.2s ease-in-out infinite}
+@keyframes rpulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* ── SUPPORT CHAT BUBBLE ── */
+#chat-bubble{position:fixed;bottom:1.75rem;right:1.75rem;z-index:800}
+
+#chat-fab{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--sky),var(--violet));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(26,159,212,.45);
+  transition:transform .2s,box-shadow .2s;flex-shrink:0}
+#chat-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(26,159,212,.65)}
+#chat-fab svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#chat-fab .chat-close-icon{display:none}
+#chat-fab .chat-open-icon{display:block}
+#chat-bubble.open #chat-fab .chat-close-icon{display:block}
+#chat-bubble.open #chat-fab .chat-open-icon{display:none}
+
+.chat-window{display:none;position:absolute;bottom:64px;right:0;
+  width:340px;max-height:520px;
+  background:rgba(4,10,24,.97);
+  border:1px solid rgba(0,212,255,.22);border-radius:16px;
+  overflow:hidden;flex-direction:column;
+  box-shadow:0 16px 48px rgba(0,0,0,.6);
+  animation:chatSlideUp .22s ease}
+#chat-bubble.open .chat-window{display:flex}
+@keyframes chatSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.chat-header{padding:.875rem 1rem;background:rgba(0,0,0,.35);
+  border-bottom:1px solid rgba(0,212,255,.12);
+  display:flex;align-items:center;gap:.65rem;flex-shrink:0}
+.chat-header-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--bright),var(--violet));
+  display:flex;align-items:center;justify-content:center;font-size:.8rem}
+.chat-header-info{flex:1}
+.chat-header-name{font-size:.85rem;font-weight:600;color:var(--white);line-height:1.2}
+.chat-header-status{font-size:.68rem;color:var(--teal);display:flex;align-items:center;gap:4px}
+.chat-header-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block}
+
+.chat-messages{flex:1;overflow-y:auto;padding:.875rem;display:flex;flex-direction:column;gap:.625rem;
+  scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);border-radius:2px}
+
+.chat-msg{max-width:88%;font-size:.82rem;line-height:1.55;padding:.55rem .8rem;border-radius:12px;word-break:break-word}
+.chat-msg.bot{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);
+  color:var(--white);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.user{background:linear-gradient(135deg,rgba(26,159,212,.3),rgba(124,77,255,.25));
+  border:1px solid rgba(0,212,255,.2);
+  color:var(--white);align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg.typing{color:var(--muted);font-style:italic}
+
+.chat-input-wrap{padding:.625rem .75rem;border-top:1px solid rgba(0,212,255,.12);
+  display:flex;align-items:center;gap:.5rem;background:rgba(0,0,0,.25);flex-shrink:0}
+#chat-text-input{flex:1;background:rgba(0,10,30,.6);border:1px solid rgba(0,212,255,.2);
+  border-radius:8px;padding:.5rem .75rem;color:var(--white);font-family:'Outfit',sans-serif;
+  font-size:.82rem;outline:none;transition:border-color .2s;resize:none;min-height:36px;max-height:100px}
+#chat-text-input::placeholder{color:rgba(126,204,232,.4)}
+#chat-text-input:focus{border-color:rgba(0,212,255,.45)}
+#chat-send-btn{width:34px;height:34px;border-radius:8px;border:none;cursor:pointer;flex-shrink:0;
+  background:linear-gradient(135deg,var(--sky),var(--violet));
+  display:flex;align-items:center;justify-content:center;transition:opacity .2s}
+#chat-send-btn:disabled{opacity:.4;cursor:default}
+#chat-send-btn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.chat-suggested{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.25rem}
+.chat-chip{font-size:.72rem;padding:.3rem .65rem;border-radius:999px;
+  border:1px solid rgba(0,212,255,.25);color:var(--muted);background:transparent;
+  cursor:pointer;transition:all .2s;font-family:'Outfit',sans-serif}
+.chat-chip:hover{border-color:var(--bright);color:var(--bright);background:rgba(0,212,255,.06)}
+
+@media(max-width:480px){
+  .chat-window{width:calc(100vw - 2rem);right:-1.25rem}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="swirl"></div>
+
+<div id="toast-container"></div>
+
+<div class="mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar">
+  <a href="index.html" class="sidebar-logo">
+    <div class="logo-text">Archimedes MD</div>
+    <div class="logo-sub">Model Design Platform</div>
+  </a>
+  <div style="padding:.5rem 0;flex:1;overflow-y:auto">
+    <div class="nav-section">Workspace</div>
+    <button class="nav-item active" onclick="showPanel('overview',this)"><span class="nav-icon">◈</span> Overview</button>
+    <button class="nav-item" onclick="showPanel('train',this)"><span class="nav-icon">⬡</span> Analyze Data</button>
+    <button class="nav-item" onclick="showPanel('model-train',this)"><span class="nav-icon">◈</span> Train Model</button>
+    <button class="nav-item" onclick="showPanel('library',this)"><span class="nav-icon">◎</span> Model Library</button>
+    <button class="nav-item" onclick="showPanel('recall',this)"><span class="nav-icon">◉</span> Evaluate Data</button>
+    <button class="nav-item" onclick="showPanel('organize',this)"><span class="nav-icon">✦</span> Data Organization</button>
+    <div class="nav-section" style="margin-top:1rem">Account</div>
+    <button class="nav-item" onclick="showPanel('billing',this)"><span class="nav-icon">◇</span> Billing</button>
+    <a href="index.html" class="nav-item"><span class="nav-icon">←</span> Back to Site</a>
+  </div>
+  <svg class="mandala-side" viewBox="0 0 180 180" fill="none">
+    <circle cx="90" cy="90" r="80" stroke="#00d4ff" stroke-width=".8" opacity=".6"/>
+    <circle cx="90" cy="90" r="60" stroke="#e040fb" stroke-width=".8" opacity=".6"/>
+    <circle cx="90" cy="90" r="40" stroke="#ffd600" stroke-width=".8" opacity=".6"/>
+    <circle cx="90" cy="90" r="20" stroke="#00c853" stroke-width=".8" opacity=".6"/>
+    <polygon points="90,10 160,140 20,140" stroke="#00d4ff" stroke-width=".6" fill="none" opacity=".5"/>
+    <polygon points="90,170 160,40 20,40" stroke="#e040fb" stroke-width=".6" fill="none" opacity=".5"/>
+    <line x1="90" y1="10" x2="90" y2="170" stroke="#ffd600" stroke-width=".4" opacity=".4"/>
+    <line x1="10" y1="90" x2="170" y2="90" stroke="#ffd600" stroke-width=".4" opacity=".4"/>
+    <circle cx="90" cy="90" r="5" fill="#00d4ff" opacity=".8"/>
+  </svg>
+
+  <div class="sidebar-bottom">
+    <div class="user-pill" style="cursor:pointer" onclick="signOut()" title="Sign out">
+      <div class="avatar">U</div>
+      <div style="flex:1"><div class="user-name">Your Account</div><div class="user-plan">Free Plan</div></div>
+      <div style="font-size:.7rem;color:var(--muted)">Sign out</div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <h1 id="topbar-title">Overview</h1>
+    <div class="topbar-actions" style="display:flex;gap:.75rem;align-items:center">
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀ Soft</button>
+      <button class="btn-new" onclick="showPanel('train',null)">+ New Analysis</button>
+      <button class="btn-new" onclick="showPanel('organize',null)" style="background:rgba(224,64,251,.1);border:1px solid rgba(224,64,251,.3);color:var(--magenta)">
+        ✦ Organize Data
+      </button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div id="panel-overview" class="panel active">
+      <!-- Data Organization compact card -->
+      <div class="card" style="cursor:pointer;border:1px solid rgba(224,64,251,.2);background:rgba(224,64,251,.04);padding:1rem 1.25rem" onclick="showPanel('organize',null)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <span style="color:var(--magenta);font-size:1rem">✦</span>
+            <div>
+              <div style="font-size:.85rem;font-weight:600;color:var(--white)">Organize Your Data</div>
+              <div id="org-usage-display" style="font-size:.72rem;color:var(--muted);margin-top:2px"></div>
+            </div>
+          </div>
+          <span style="color:var(--muted);font-size:.8rem">→</span>
+        </div>
+      </div>
+      <div class="overview-grid">
+        <div class="ov-card"><div class="ov-val" id="ov-total">0</div><div class="ov-lbl">Models Saved</div></div>
+        <div class="ov-card"><div class="ov-val">1</div><div class="ov-lbl">Model Limit</div></div>
+        <div class="ov-card"><div class="ov-val">Free</div><div class="ov-lbl">Current Plan</div></div>
+        <div class="ov-card"><div class="ov-val" id="ov-evals">0</div><div class="ov-lbl">Evaluations Run</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title" id="welcome-title">Welcome to Archimedes MD</div>
+        <p style="color:var(--muted);font-size:.9rem;line-height:1.75;margin-bottom:1.25rem" id="welcome-msg">
+          Upload any dataset — medical records, financial data, images, or text. Archimedes MD trains a real AI model on your data and delivers predictions on any new input forever.
+        </p>
+        <button class="btn-new" id="welcome-btn" onclick="showPanel('train',null)">Design your first model →</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Models</div>
+        <div id="ov-recent"><div class="empty"><div class="empty-icon">◎</div><p>No models yet. Train one to get started.</p></div></div>
+      </div>
+    </div>
+
+    <!-- TRAIN -->
+    <div id="panel-train" class="panel">
+      <div class="card" id="step1-card">
+        <div class="card-title">Step 1 — Upload Your Data</div>
+        <div class="upload-zone" id="drop-zone">
+          <div style="font-size:1.4rem;margin-bottom:.4rem">⬆</div>
+          <div style="font-size:.9rem;font-weight:500;color:var(--white);margin-bottom:.25rem" id="drop-title">Drag your dataset here</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:.75rem">CSV, Excel, JSON, ZIP, IPYNB, or HTML</div>
+          <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Browse Files</button>
+          <input type="file" id="fileInput" accept=".csv,.json,.xlsx,.xls,.zip,.ipynb,.html,.htm" style="display:none">
+        </div>
+        <div id="file-info" style="display:none;padding:.75rem 1rem;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:8px;font-size:.82rem;color:var(--muted)"></div>
+        <div class="progress" id="upload-progress" style="display:none"><div class="progress-fill" id="upload-fill"></div></div>
+      </div>
+
+      <!-- LAST REPORT BANNER — shown when returning from report page -->
+      <div id="last-report-banner" style="display:none;margin-bottom:1rem;padding:.875rem 1.25rem;
+        background:linear-gradient(135deg,rgba(124,77,255,.1),rgba(0,212,255,.06));
+        border:1px solid rgba(124,77,255,.3);border-radius:12px;
+        display:none;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <span style="font-size:1.1rem">📊</span>
+          <div>
+            <div style="font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;
+              background:linear-gradient(90deg,var(--violet),var(--bright));
+              -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:2px">
+              Last Report Available
+            </div>
+            <div style="font-size:.8rem;color:var(--muted)">Your previous Data Intelligence Report is still loaded — open it instantly.</div>
+          </div>
+        </div>
+        <button onclick="reopenLastReport()" style="
+          padding:.5rem 1.1rem;border-radius:6px;border:none;cursor:pointer;
+          font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;white-space:nowrap;
+          background:linear-gradient(135deg,#4a00e0,#7c4dff,#00d4ff);
+          background-size:300% auto;animation:shimmerSlide 3s linear infinite;
+          color:var(--white);box-shadow:0 0 18px rgba(124,77,255,.4)">
+          ↗ View Report
+        </button>
+      </div>
+
+      <div class="card" id="step2-card" style="display:none">
+        <div class="card-title" style="margin-bottom:.75rem">Step 2 — Confirm Settings</div>
+        <div id="dataset-health-preview" class="health-preview"></div>
+
+        <!-- DATA INTELLIGENCE REPORT -->
+        <div id="report-cta" style="display:none;margin-bottom:1rem;padding:1.25rem;background:linear-gradient(135deg,rgba(255,214,0,.06),rgba(255,109,0,.04));border:1px solid rgba(255,214,0,.2);border-radius:12px">
+          <div style="font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:2.5px;text-transform:uppercase;background:linear-gradient(90deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem">✦ Data Intelligence Report</div>
+          <p style="font-size:.82rem;color:var(--muted);line-height:1.65;margin-bottom:.875rem">Before training a model, get a full professional data analysis — patterns, correlations, segment breakdowns, outlier profiling, and prioritized business recommendations. A powerful starting point for any data workflow.</p>
+          <div style="margin-bottom:.875rem">
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
+              <label style="margin:0;font-size:.68rem">Report focus <span style="color:rgba(126,204,232,.5);font-weight:400">(optional)</span></label>
+            </div>
+            <select id="reportTargetSel" style="font-size:.82rem;padding:.6rem 2.5rem .6rem .85rem">
+              <option value="">Exploratory — full dataset profile, no prediction target</option>
+            </select>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">Choose a column to get target-aware segment analysis and prediction-oriented recommendations, or leave as Exploratory for a general dataset profile.</div>
+          </div>
+          <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+            <button class="btn-report" id="reportBtn" onclick="generateDataReport()">
+              ✦ Generate Data Intelligence Report
+            </button>
+            <div id="report-loading" style="display:none;font-size:.78rem;color:var(--gold);display:flex;align-items:center;gap:.5rem">
+              <span class="report-pulse"></span> Analyzing data — this can take a few minutes…
+            </div>
+          </div>
+          <div id="report-context-wrap" style="margin-top:.875rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+              <label style="margin-top:0;font-size:.68rem">Optional: tell us what to focus on (or describe the dataset)</label>
+              <button type="button" onclick="openPromptHelper()" style="background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:6px;color:var(--bright);font-family:'Outfit',sans-serif;font-size:.7rem;padding:.3rem .65rem;cursor:pointer;white-space:nowrap;transition:all .2s" onmouseover="this.style.background='rgba(0,212,255,.18)'" onmouseout="this.style.background='rgba(0,212,255,.08)'">✦ Help me write this</button>
+            </div>
+            <textarea id="reportContext" placeholder="e.g. Only analyze the Colorants category. Or: exclude Amazon orders and focus on repeat customers. Or: this is e-commerce sales data for a clothing retailer, 2023-2024." style="margin-top:.3rem;min-height:70px;resize:vertical"></textarea>
+          </div>
+        </div>
+        <div id="train-model-cta" style="display:none;margin-top:.75rem;padding:1.25rem;background:linear-gradient(135deg,rgba(124,77,255,.08),rgba(0,212,255,.04));border:1px solid rgba(124,77,255,.25);border-radius:12px">
+          <div style="font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:2.5px;text-transform:uppercase;background:linear-gradient(90deg,var(--violet),var(--bright));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem">⬡ Train a Model</div>
+          <p style="font-size:.82rem;color:var(--muted);line-height:1.65;margin-bottom:.875rem">Ready to build a predictive model? Select your target column, choose an algorithm, and train a model you can call forever on new data.</p>
+          <button class="btn-full btn-generate" onclick="goToTrainPanel()" style="max-width:260px">⬡ Train a Model →</button>
+        </div>
+      </div>
+
+      <!-- REPORT HISTORY -->
+      <div id="report-history-card" class="card" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <div class="card-title" style="margin-bottom:0">Recent Reports</div>
+          <button onclick="clearReportHistory()" style="background:none;border:none;color:var(--muted);font-size:.72rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:color .2s"
+            onmouseover="this.style.color='var(--coral)'" onmouseout="this.style.color='var(--muted)'">Clear</button>
+        </div>
+        <div id="report-history-list" style="display:flex;flex-direction:column;gap:.5rem"></div>
+      </div>
+
+    </div>
+
+    <!-- TRAIN MODEL PANEL -->
+    <div id="panel-model-train" class="panel">
+      <div style="margin-bottom:1.25rem">
+        <button onclick="goBackToAnalysis()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;padding:0;transition:color .2s" onmouseover="this.style.color='var(--bright)'" onmouseout="this.style.color='var(--muted)'">← Back to Analysis</button>
+      </div>
+      <div id="train-dataset-info" class="card" style="display:none">
+        <div class="card-title" style="margin-bottom:.4rem">Dataset</div>
+        <div id="train-file-info" style="font-size:.85rem;color:var(--muted)"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:1rem">Configure Your Model</div>
+        <label>Model name</label>
+        <input type="text" id="modelName" placeholder="e.g. diabetes-risk-v1, fraud-detector">
+        <div class="algo-wrap">
+          <label style="margin-top:0">Target column (what to predict)</label>
+          <div class="algo-tip-btn" tabindex="0">?
+            <div class="algo-tip-box">This is the outcome your model will learn to predict — e.g. "readmitted", "churned", "approved", "left_company". Every other column becomes an input. Required for model training.</div>
+          </div>
+        </div>
+        <select id="targetColSel"></select>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.35rem;line-height:1.5;margin-bottom:.75rem">Choose the column that represents the outcome you care about. For patient data this might be <em>readmitted</em>; for sales data, <em>churned</em> or <em>converted</em>.</div>
+        <div id="col-preview" style="display:none;margin-top:.4rem;font-size:.75rem;color:var(--muted);padding:.4rem .75rem;background:rgba(0,212,255,.04);border-radius:6px;border:1px solid rgba(0,212,255,.1)"></div>
+        <div class="algo-wrap">
+          <label style="margin-top:0">Task type</label>
+          <div class="algo-tip-btn" tabindex="0" id="task-tip-btn">?
+            <div class="algo-tip-box" id="task-tip-box">Select a task type to see what it means.</div>
+          </div>
+        </div>
+        <select id="taskSel" onchange="updateAlgorithms(); updateTaskTip()">
+          <option value="classification">Classification (categories/labels)</option>
+          <option value="regression">Regression (numbers/scores)</option>
+          <option value="clustering">Clustering (find groups)</option>
+        </select>
+        <div class="algo-wrap">
+          <label style="margin-top:0">Algorithm</label>
+          <div class="algo-tip-btn" tabindex="0" id="algo-tip-btn">?
+            <div class="algo-tip-box" id="algo-tip-box">Select an algorithm above to see what it does.</div>
+          </div>
+        </div>
+        <select id="algoSel" onchange="updateAlgoTip()"></select>
+        <button class="btn-full btn-generate" id="trainBtn" onclick="trainRealModel()" style="margin-top:1rem">⬡ Train Real Model on My Data</button>
+      </div>
+      <div class="card" id="step3-card" style="display:none">
+        <div class="card-title" style="background:linear-gradient(90deg,var(--emerald),var(--bright));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">✓ Model Trained on Real Data</div>
+        <div class="progress"><div class="progress-fill" id="train-fill" style="width:0%"></div></div>
+        <div id="train-status" style="font-size:.82rem;color:var(--muted);margin:.5rem 0 1rem;font-family:monospace"></div>
+        <div class="stats-row" id="real-stats" style="display:none"></div>
+        <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
+          <button type="button" class="btn-full btn-generate" id="saveRealBtn" style="display:none;max-width:220px" onclick="saveRealModel()">◈ Save to Library</button>
+          <button type="button" class="btn-full" style="background:rgba(0,212,255,.08);color:var(--bright);border:1px solid rgba(0,212,255,.2);max-width:180px;display:none;margin-top:1.25rem" id="downloadBtn" onclick="downloadModel()">Download .pkl</button>
+        </div>
+        <div id="train-fi" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div id="panel-library" class="panel">
+      <div class="card">
+        <div class="card-title">Saved Models</div>
+        <div class="model-list" id="libraryList"></div>
+        <div class="empty" id="libraryEmpty" style="display:none">
+          <div class="empty-icon">◎</div>
+          <p>No models saved yet.<br>Train one and save it to build your library.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EVALUATE -->
+    <div id="panel-recall" class="panel">
+
+      <!-- MODEL SELECTOR + INFO -->
+      <div class="card">
+        <div class="card-title">Evaluate New Data</div>
+        <label>Select saved model</label>
+        <select id="recallSel" onchange="onModelSelect()"></select>
+
+        <!-- Model info card — shown after selection -->
+        <div id="eval-model-info" style="display:none;margin-top:1rem;padding:1rem 1.25rem;
+          background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.15);border-radius:10px;
+          display:none;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem">
+        </div>
+      </div>
+
+      <!-- INPUT FIELDS -->
+      <div class="card" id="eval-input-card" style="display:none">
+        <div class="card-title" style="background:linear-gradient(90deg,var(--bright),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+          Input Features
+        </div>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.6">
+          Enter values for each feature below. These are the columns the model was trained on.
+        </p>
+        <div id="eval-fields" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem"></div>
+
+        <!-- Fallback raw input -->
+        <div style="margin-top:1.25rem">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+            <div style="height:1px;flex:1;background:rgba(0,212,255,.1)"></div>
+            <span style="font-size:.68rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase">or paste raw</span>
+            <div style="height:1px;flex:1;background:rgba(0,212,255,.1)"></div>
+          </div>
+          <textarea id="newData" style="min-height:70px" placeholder="feature1: value1, feature2: value2, ..."
+            oninput="checkRawCase(this)"></textarea>
+          <div id="raw-case-warning" style="display:none;margin-top:.4rem;padding:.45rem .75rem;
+            background:rgba(255,214,0,.06);border:1px solid rgba(255,214,0,.25);border-radius:6px;
+            font-size:.75rem;color:var(--gold)">
+            ⚡ Use lowercase feature names (e.g. <code style="color:var(--bright)">credit_score</code> not <code style="color:var(--bright)">CREDIT_SCORE</code>) for accurate results.
+          </div>
+        </div>
+
+        <button class="btn-full btn-generate" id="evalBtn" onclick="evaluateData()">◉ Run Evaluation</button>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="stream-area" id="evalOutput">
+
+        <!-- Plain English Summary -->
+        <div class="card" style="background:linear-gradient(135deg,rgba(0,212,255,.04),rgba(124,77,255,.04));border:1px solid rgba(0,212,255,.18)">
+          <div class="card-title">◈ Plain English Summary</div>
+          <div id="humanSummary" style="font-size:.95rem;line-height:1.85;color:var(--white)"></div>
+        </div>
+
+        <!-- Prediction badge -->
+        <div id="pred-badge-wrap" style="display:none;text-align:center;padding:1.5rem 0">
+          <div id="pred-badge" style="display:inline-block;font-family:'Cinzel',serif;font-size:1.4rem;font-weight:700;
+            padding:.75rem 2rem;border-radius:12px;letter-spacing:2px"></div>
+          <div id="pred-confidence" style="margin-top:.5rem;font-size:.82rem;color:var(--muted)"></div>
+        </div>
+
+        <!-- Feature importance -->
+        <div id="eval-fi" style="display:none"></div>
+
+        <!-- Submit actual outcome — enables ground-truth retraining -->
+        <div id="feedback-section" style="display:none;margin-top:1rem;padding:1.1rem 1.25rem;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:12px">
+          <div style="font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--bright);margin-bottom:.5rem">Know the actual result?</div>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem;line-height:1.6">Once you know what actually happened, save it here. Saved outcomes accumulate and can be used to retrain the model on real-world data.</p>
+          <div style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:160px">
+              <label style="font-size:.68rem;margin-bottom:.3rem;display:block">Actual outcome</label>
+              <input type="text" id="feedback-true-label" placeholder="e.g. churned, yes, 1, retained…" style="margin:0">
+            </div>
+            <button type="button" onclick="submitFeedback()" style="padding:.75rem 1.25rem;border-radius:8px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:var(--bright);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">
+              Save outcome
+            </button>
+          </div>
+          <div id="feedback-status" style="font-size:.75rem;color:var(--muted);margin-top:.5rem;display:none"></div>
+        </div>
+
+        <!-- Evaluation History -->
+        <div id="eval-history-wrap" style="display:none;margin-top:1.5rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div style="font-size:.65rem;letter-spacing:3px;text-transform:uppercase;
+              background:linear-gradient(90deg,var(--magenta),var(--violet));
+              -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+              Recent Evaluations
+            </div>
+            <button onclick="clearEvalHistory()" style="background:none;border:none;color:var(--muted);
+              font-size:.7rem;cursor:pointer;transition:color .2s" onmouseover="this.style.color='var(--coral)'" 
+              onmouseout="this.style.color='var(--muted)'">Clear history</button>
+          </div>
+          <div id="eval-history-list" style="display:flex;flex-direction:column;gap:.5rem"></div>
+        </div>
+
+        <!-- Raw output + code (collapsible) -->
+        <div style="margin-top:1rem">
+          <button onclick="toggleRawOutput()" style="background:none;border:none;color:var(--muted);font-size:.75rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;padding:.4rem 0;display:flex;align-items:center;gap:.5rem">
+            <span id="raw-toggle-icon">▶</span> Show Raw Output & Code
+          </button>
+          <div id="raw-output-wrap" style="display:none;margin-top:.75rem">
+            <div class="stream-label">Raw Model Output</div>
+            <div class="stream-box" id="evalStream"></div>
+            <div class="stream-label" style="margin-top:1.25rem">Inference Code</div>
+            <div class="code-box" id="inferCode"></div>
+            <div style="display:flex;gap:.6rem;margin-top:.75rem;align-items:center">
+              <select id="codeLangSel" style="max-width:140px;padding:.6rem .75rem;font-size:.82rem">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+              </select>
+              <button type="button" class="btn-full" id="downloadScriptBtn" style="display:none;margin:0;background:rgba(0,212,255,.08);color:var(--bright);border:1px solid rgba(0,212,255,.2);max-width:220px" onclick="downloadCode()">
+                ↓ Download Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- BILLING -->
+    <!-- ORGANIZE YOUR DATA PANEL -->
+    <div id="panel-organize" class="panel">
+      <div class="card">
+        <div class="card-title" style="background:linear-gradient(90deg,var(--magenta),var(--violet),var(--bright));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+          ✦ Organize Your Data
+        </div>
+        <p style="font-size:1rem;color:var(--muted);line-height:1.75;margin-bottom:1.5rem">
+          Have data spread across multiple files? Upload them all here. We'll figure out how they fit together, show you the plan, and combine them into one clean dataset — ready to train on or analyze in minutes.
+        </p>
+
+        <!-- Scope/focus instructions -->
+        <div style="margin-bottom:1.5rem">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
+            <label style="margin-top:0;font-size:.68rem">Optional: focus on a specific part of your data</label>
+            <div class="algo-tip-btn" tabindex="0">?
+              <div class="algo-tip-box">Tell us to keep only a certain category, product, date range, or segment — e.g. "only keep Colorants" or "exclude orders from Amazon." We'll apply this when building your clean dataset, so the result and any report or model trained from it only reflects what you asked for.</div>
+            </div>
+          </div>
+          <textarea id="orgScopeInstructions" placeholder="e.g. Only keep rows where category is Colorants. Or: exclude Amazon orders. Leave blank to use everything." style="min-height:60px;resize:vertical"></textarea>
+        </div>
+
+        <!-- Drop zone -->
+        <div id="org-dropzone" style="border:2px dashed rgba(224,64,251,.3);border-radius:12px;padding:2.5rem;text-align:center;transition:all .25s;cursor:pointer;background:rgba(224,64,251,.03)"
+          ondragover="event.preventDefault();this.style.borderColor='var(--magenta)'"
+          ondragleave="this.style.borderColor='rgba(224,64,251,.3)'"
+          ondrop="orgHandleDrop(event)"
+          onclick="document.getElementById('orgFileInput').click()">
+          <input type="file" id="orgFileInput" multiple accept=".csv,.json,.xlsx,.xls,.tsv,.txt" style="display:none" onchange="orgHandleFiles(this.files)">
+          <div style="font-size:1.5rem;margin-bottom:.5rem">📂</div>
+          <div style="font-size:1.05rem;color:var(--white);font-weight:600">Drop files here or click to browse</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">CSV, Excel, JSON, TSV — unlimited files</div>
+        </div>
+
+        <!-- File list -->
+        <div id="org-file-list" style="margin-top:1rem;display:flex;flex-direction:column;gap:.4rem"></div>
+
+        <div style="display:flex;align-items:center;gap:.4rem;margin-top:.75rem;font-size:.72rem;color:var(--muted)">
+          <span>Have ID columns with leading zeros (like "007")?</span>
+          <div class="algo-tip-btn" tabindex="0">?
+            <div class="algo-tip-box">CSV files preserve leading zeros when the zeros are already present in the CSV. For Excel, format the ID column as Text before entering values — otherwise Excel itself strips the leading zero before we ever see the file (and this also affects a CSV exported from that same Excel file). For JSON, make sure ID values are quoted strings ("customer_id": "007"), not bare numbers. Once a leading zero is lost in the source file, it can't be recovered after upload.</div>
+          </div>
+        </div>
+
+        <button id="org-analyze-btn" class="btn-full btn-generate" style="display:none;margin-top:1.25rem" onclick="orgAnalyze()">
+          ✦ Analyze My Files
+        </button>
+      </div>
+
+      <!-- PLAN REVIEW -->
+      <div id="org-plan-card" class="card" style="display:none">
+        <div class="card-title">Here's what we'll do</div>
+        <p style="font-size:1rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.75">
+          We analyzed your files and built a plan to combine them into one clean dataset. Review below, then run it.
+        </p>
+
+        <div id="org-assessment" style="padding:1.25rem;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.12);border-radius:12px;margin-bottom:1.5rem"></div>
+
+        <div style="font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.875rem">Steps we'll take</div>
+        <div id="org-transformations" style="display:flex;flex-direction:column;margin-bottom:1.5rem"></div>
+
+        <div id="org-warnings" style="padding:1rem 1.25rem;background:rgba(255,214,0,.05);border:1px solid rgba(255,214,0,.2);border-radius:10px;margin-bottom:1.5rem;display:none"></div>
+
+        <!-- Risky-join confirmation panel — shown only when the pre-execution
+             review flags a join that would substantially expand row count or
+             hit heavy duplicate-key fanout. Distinct from the routine
+             data-quality warnings above: this one gates the execute button
+             until explicitly acknowledged. -->
+        <div id="org-risk-confirm" style="display:none;padding:1.1rem 1.25rem;background:rgba(255,68,68,.06);border:1px solid rgba(255,68,68,.3);border-radius:10px;margin-bottom:1.5rem">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem">
+            <span style="font-size:1.1rem;color:var(--coral)">⚠</span>
+            <span style="font-size:1rem;font-weight:600;color:var(--coral)">This join may significantly change your row count</span>
+          </div>
+          <div id="org-risk-confirm-body" style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem"></div>
+          <label style="display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;font-size:.88rem;color:var(--white);line-height:1.5">
+            <input type="checkbox" id="org-risk-confirm-checkbox" style="margin-top:.2rem;flex-shrink:0">
+            <span>I understand this will change the size of my dataset as described above — proceed anyway.</span>
+          </label>
+        </div>
+
+        <div style="display:flex;gap:1rem">
+          <button class="btn-full btn-generate" onclick="orgExecute()" style="flex:2;font-size:1rem;padding:1rem">
+            Build My Clean Dataset →
+          </button>
+          <button onclick="orgReset()" style="flex:1;background:none;border:1px solid rgba(255,68,68,.3);color:var(--coral);border-radius:8px;padding:1rem;cursor:pointer;font-family:'Outfit',sans-serif;font-size:.9rem;transition:all .2s"
+            onmouseover="this.style.background='rgba(255,68,68,.08)'" onmouseout="this.style.background='none'">
+            Start Over
+          </button>
+        </div>
+      </div>
+
+      <!-- HARD-BLOCKED RESULT — shown when /organize/execute returns
+           blocked:true for a reason the user CANNOT resolve by confirming
+           (e.g. a missing join key). Distinct card so it never looks like a
+           finished, successful result. -->
+      <div id="org-blocked-card" class="card" style="display:none;border:1px solid rgba(255,68,68,.35)">
+        <div class="card-title" style="color:var(--coral)">✕ We stopped before finishing</div>
+        <p style="font-size:.95rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem">
+          The organizer hit a problem it can't safely resolve on its own. Review the details below, then adjust your files or scope instructions and try again.
+        </p>
+        <div id="org-blocked-body" style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.25rem"></div>
+        <button onclick="orgReset()" class="btn-full" style="background:none;border:1px solid rgba(255,68,68,.3);color:var(--coral);padding:.85rem 1rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.9rem;cursor:pointer">
+          Start Over
+        </button>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="org-result-card" class="card" style="display:none;max-width:100%">
+        <div class="card-title" style="color:var(--emerald)">✓ Dataset Ready</div>
+
+        <!-- Stats -->
+        <div id="org-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem;text-align:center">
+        </div>
+
+        <!-- Verification result -->
+        <div id="org-verification" style="padding:.875rem 1rem;border-radius:8px;font-size:.85rem;line-height:1.6;margin-bottom:1.25rem"></div>
+
+        <!-- Preview table -->
+        <div style="margin-bottom:1.25rem;max-width:100%">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div style="font-size:.68rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase">Preview (first 5 rows)</div>
+            <button id="org-preview-expand-btn" onclick="toggleOrgPreviewExpand()" style="background:none;border:1px solid rgba(0,212,255,.25);color:var(--bright);border-radius:6px;padding:.3rem .7rem;font-size:.72rem;cursor:pointer;font-family:'Outfit',sans-serif;white-space:nowrap">
+              ⤢ Expand
+            </button>
+          </div>
+          <div id="org-preview-wrap" style="max-width:100%;overflow-x:auto;overflow-y:hidden;max-height:260px;border-radius:8px;border:1px solid rgba(0,212,255,.1);transition:max-height .25s ease">
+            <div id="org-preview"></div>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;flex-direction:column;gap:.75rem;max-width:100%">
+          <button class="btn-full" style="background:linear-gradient(135deg,var(--teal),var(--emerald));border:none;color:var(--white);padding:.85rem 1rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .3s;white-space:normal;line-height:1.3"
+            onclick="orgDownload()">
+            ↓ Download Organized Dataset (.csv)
+          </button>
+          <button class="btn-full" style="background:none;border:1px solid rgba(0,212,255,.3);color:var(--bright);padding:.85rem 1rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .3s;white-space:normal;line-height:1.3"
+            onclick="orgDownloadReport()">
+            ↓ Download Organization Report
+          </button>
+          <button class="btn-full btn-generate" style="font-size:.85rem;white-space:normal;line-height:1.3" onclick="orgUseForModel()">
+            ⬡ Train a Model with This Dataset
+          </button>
+          <button class="btn-full" style="background:linear-gradient(135deg,rgba(74,0,224,.2),rgba(124,77,255,.15));border:1px solid rgba(124,77,255,.4);color:var(--lavender);padding:.85rem 1rem;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .3s;white-space:normal;line-height:1.3"
+            onclick="orgUseForReport()">
+            ✦ Generate Data Intelligence Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-billing" class="panel">
+      <div class="card">
+        <div class="card-title">Current Plan — Free</div>
+        <p style="color:var(--muted);font-size:.875rem;line-height:1.6;margin-bottom:1.5rem">Upgrade to unlock more models, larger datasets, and full API access.</p>
+        <div class="plan-grid">
+          <div class="plan-card">
+            <div class="plan-tier">FREE</div>
+            <div class="plan-price">$0</div>
+            <p class="plan-desc">1 model · 10MB uploads · 1 report per upload</p>
+            <div style="margin:.75rem 0;font-size:.72rem;color:var(--muted);line-height:1.8;border-top:1px solid rgba(0,212,255,.1);padding-top:.75rem">
+              <div>✓ Data Intelligence Report</div>
+              <div>✓ Model training &amp; predictions</div>
+              <div>✓ CSV, JSON, Excel</div>
+              <div style="opacity:.4">✕ Report download</div>
+              <div style="opacity:.4">✕ API access</div>
+            </div>
+            <a href="#" class="plan-btn" style="opacity:.4;cursor:default">Current Plan</a>
+          </div>
+          <div class="plan-card">
+            <div class="plan-tier">PRO</div>
+            <div class="plan-price">$49.99<span style="font-size:.9rem;color:var(--muted);-webkit-text-fill-color:var(--muted)">/mo</span></div>
+            <p class="plan-desc">5 models · 2GB uploads · 50 reports</p>
+            <div style="margin:.75rem 0;font-size:.72rem;color:var(--muted);line-height:1.8;border-top:1px solid rgba(0,212,255,.1);padding-top:.75rem">
+              <div>✓ 50 Data Intelligence Reports</div>
+              <div>✓ 100 Data Organization sessions</div>
+              <div>✓ Download reports as HTML</div>
+              <div>✓ All file types incl. ZIP &amp; IPYNB</div>
+              <div>✓ 5 saved models</div>
+              <div style="opacity:.4">✕ PDF export</div>
+            </div>
+            <a href="#" class="plan-btn" onclick="showUpgradeModal('Pro')">Upgrade to Pro</a>
+          </div>
+          <div class="plan-card featured">
+            <div class="plan-tier">TEAM</div>
+            <div class="plan-price">$149<span style="font-size:.9rem;color:var(--muted);-webkit-text-fill-color:var(--muted)">/mo</span></div>
+            <p class="plan-desc">15 models · 10GB · API access</p>
+            <div style="margin:.75rem 0;font-size:.72rem;color:var(--muted);line-height:1.8;border-top:1px solid rgba(0,212,255,.1);padding-top:.75rem">
+              <div>✓ 200 Data Intelligence Reports</div>
+              <div>✓ 400 Data Organization sessions</div>
+              <div>✓ Full API access</div>
+              <div>✓ 15 saved models</div>
+              <div>✓ 10GB uploads</div>
+              <div>✓ Full API access</div>
+            </div>
+            <a href="#" class="plan-btn hot" onclick="showUpgradeModal('Team')">Upgrade to Team</a>
+          </div>
+          <div class="plan-card">
+            <div class="plan-tier">UNLIMITED</div>
+            <div class="plan-price">$399<span style="font-size:.9rem;color:var(--muted);-webkit-text-fill-color:var(--muted)">/mo</span></div>
+            <p class="plan-desc">Unlimited everything</p>
+            <div style="margin:.75rem 0;font-size:.72rem;color:var(--muted);line-height:1.8;border-top:1px solid rgba(0,212,255,.1);padding-top:.75rem">
+              <div>✓ Everything in Team</div>
+              <div>✓ Unlimited models &amp; data</div>
+              <div>✓ Unlimited reports &amp; exports</div>
+              <div>✓ Priority support</div>
+              <div>✓ Custom integrations</div>
+            </div>
+            <a href="#" class="plan-btn" onclick="showUpgradeModal('Unlimited')">Go Unlimited</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── SUPPORT CHAT BUBBLE ── -->
+<div id="chat-bubble">
+  <div class="chat-window" role="dialog" aria-label="Archimedes MD Support Chat">
+    <div class="chat-header">
+      <div class="chat-header-avatar">◈</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">Archimedes MD Support</div>
+        <div class="chat-header-status">Online — ask me anything</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-msg bot">Hi! I'm your Archimedes MD guide. Ask me about training models, interpreting results, feature importance, accuracy scores, or anything about the platform.</div>
+      <div class="chat-suggested">
+        <button class="chat-chip" onclick="chatChip(this)">Why is my accuracy low?</button>
+        <button class="chat-chip" onclick="chatChip(this)">What does feature importance mean?</button>
+        <button class="chat-chip" onclick="chatChip(this)">How do I pick a target column?</button>
+        <button class="chat-chip" onclick="chatChip(this)">Classification vs Regression?</button>
+      </div>
+    </div>
+    <div class="chat-input-wrap">
+      <textarea id="chat-text-input" placeholder="Ask a question…" rows="1"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}"></textarea>
+      <button id="chat-send-btn" onclick="sendChatMessage()" aria-label="Send message">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+  <button id="chat-fab" onclick="toggleChat()" aria-label="Toggle support chat">
+    <svg class="chat-open-icon" viewBox="0 0 24 24">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <svg class="chat-close-icon" viewBox="0 0 24 24">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+// ── Supabase Auth ──
+const SUPABASE_URL = 'https://tcspcuierghienomfvzz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_5hHpVU7ki4di7MBRleOeYg_xJxhyg3P';
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+
+sbClient.auth.getSession().then(async ({data:{session}})=>{
+  if(!session){ window.location.href = '/login.html'; return; }
+  currentUser = session.user;
+  const username = currentUser.user_metadata?.username || currentUser.email.split('@')[0];
+  document.querySelector('.user-name').textContent = username;
+  document.querySelector('.user-plan').textContent = 'Free Plan';
+
+  // Fetch real plan directly from Supabase profiles table
+  try{
+    const { data: profileData } = await sbClient
+      .from('profiles')
+      .select('plan')
+      .eq('id', session.user.id)
+      .single();
+    if(profileData && profileData.plan){
+      const planMap = { free: 'Free Plan', pro: 'Pro Plan', team: 'Team Plan', unlimited: 'Unlimited Plan' };
+      document.querySelector('.user-plan').textContent = planMap[profileData.plan] || 'Free Plan';
+    }
+  } catch(_){}
+
+  renderOverview();
+  restoreUploadState();
+  renderOrgUsageDisplay();
+  renderReportHistory();
+});
+
+async function signOut(){
+  await sbClient.auth.signOut();
+  window.location.href = '/login.html';
+}
+
+function restoreUploadState(){
+  let saved;
+  try{ saved = JSON.parse(sessionStorage.getItem('amd_upload_state')); } catch(_){ return; }
+  if(!saved || !saved.file_id || !saved.analysis) return;
+
+  const data = saved.analysis;
+
+  // Switch to Train panel silently
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-train').classList.add('active');
+  document.getElementById('topbar-title').textContent = 'Analyze Data';
+  // Mark Train nav item active
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.textContent.trim().includes('Analyze Data')) n.classList.add('active');
+  });
+
+  // Restore globals
+  currentFileId   = data.file_id;
+  currentAnalysis = data;
+
+  // Restore UI — Step 1
+  document.getElementById('drop-title').textContent = saved.filename + ' (' + Math.round((saved.filesize||0)/1024) + 'KB)';
+  document.getElementById('file-info').style.display  = 'block';
+  document.getElementById('file-info').style.color    = '';
+  document.getElementById('file-info').textContent    = saved.filename + ' — ' + data.rows.toLocaleString() + ' rows × ' + data.cols + ' columns';
+  document.getElementById('upload-progress').style.display = 'block';
+  document.getElementById('upload-fill').style.width  = '100%';
+
+  // Restore UI — Step 2
+  document.getElementById('step2-card').style.display  = 'block';
+  document.getElementById('report-cta').style.display  = 'block';
+  const _tmcta=document.getElementById('train-model-cta'); if(_tmcta) _tmcta.style.display='block';
+
+  if(data.warnings && data.warnings.length > 0){
+    document.querySelectorAll('#step2-card .upload-warn').forEach(el => el.remove());
+    const warnDiv = document.createElement('div');
+    warnDiv.className = 'upload-warn';
+    warnDiv.style.cssText = 'margin-bottom:1rem;padding:.75rem 1rem;background:rgba(255,214,0,.06);border:1px solid rgba(255,214,0,.2);border-radius:8px;font-size:.82rem;color:var(--gold);white-space:pre-line';
+    warnDiv.textContent = data.warnings.join('\n');
+    const preview = document.getElementById('dataset-health-preview');
+    if(preview){
+      warnDiv.classList.add('warn-restored');
+      document.getElementById('step2-card').insertBefore(warnDiv, preview);
+    }
+  }
+
+  renderDatasetHealthPreview(data, 'restored dataset');
+
+  const sel = document.getElementById('targetColSel');
+  sel.innerHTML = '<option value="" disabled selected>— Select a target column —</option>' + data.columns.map(c=>optionHTML(c)).join('');
+  const rSel = document.getElementById('reportTargetSel');
+  if(rSel){ rSel.innerHTML = '<option value="">Exploratory — full dataset profile, no prediction target</option>' + data.columns.map(c=>optionHTML(c)).join(''); }
+  function updateColPreviewRestored(){
+    const col = sel.value;
+    const info = data.column_samples && data.column_samples[col];
+    const preview = document.getElementById('col-preview');
+    if(info && preview){
+      preview.textContent = `Sample values: ${info.samples.slice(0,5).join(', ')} · ${info.n_unique} unique values`;
+      preview.style.display = 'block';
+    }
+  }
+  sel.addEventListener('change', updateColPreviewRestored);
+  updateColPreviewRestored();
+
+  document.getElementById('taskSel').value = data.task;
+  updateTaskTip();
+  const algoOptions = ALGOS[data.task] || ALGOS.classification;
+  const algoSel = document.getElementById('algoSel');
+  algoSel.innerHTML = algoOptions.map(a=>`<option value="${a.value}">${a.label}</option>`).join('');
+  algoSel.value = data.algorithm;
+  updateAlgoTip();
+
+  if(saved.modelName) document.getElementById('modelName').value = saved.modelName;
+
+  // Show "View Last Report" banner if a report is still cached
+  try{
+    const hasReport = !!sessionStorage.getItem('amd_report_v1');
+    const banner = document.getElementById('last-report-banner');
+    if(banner) banner.style.display = hasReport ? 'flex' : 'none';
+  } catch(_){}
+
+  // Re-upload the file to the server in the background so it's ready to train
+  if(saved.filedata && !saved.needsReupload){
+    reuploadFileIfNeeded().catch(()=>{});
+  }
+
+  if(saved.needsReupload){
+    // File was too large to cache — disable train button and show a clear warning
+    document.getElementById('trainBtn').disabled = true;
+    document.getElementById('trainBtn').textContent = '⬡ Please re-upload your file to train';
+
+    const warn = document.createElement('div');
+    warn.id = 'reupload-warning';
+    warn.style.cssText = 'margin-top:1rem;padding:.875rem 1.1rem;background:rgba(255,109,0,.08);border:1px solid rgba(255,109,0,.35);border-radius:10px;font-size:.84rem;color:#ffaa60;line-height:1.6';
+    warn.innerHTML = `⚠ <strong>${escapeHTML(saved.filename)}</strong> was too large to cache in your browser.
+      To continue training, drag it back into the upload zone above — your settings below are saved.`;
+    const step2 = document.getElementById('step2-card');
+    if(step2 && !document.getElementById('reupload-warning')) step2.appendChild(warn);
+
+    // Re-enable the train button once they upload a new file
+    const observer = new MutationObserver(() => {
+      if(currentFileId && !saved.needsReupload){
+        document.getElementById('trainBtn').disabled = false;
+        document.getElementById('trainBtn').textContent = '⬡ Train Real Model on My Data';
+        document.getElementById('reupload-warning')?.remove();
+        observer.disconnect();
+      }
+    });
+
+    showToast('Your settings are restored — please re-upload your file to train.', 'warning', 6000);
+  } else {
+    showToast('Picked up where you left off ✓', 'success', 3000);
+  }
+}
+
+function reopenLastReport(){
+  const tab = window.open('/report.html', '_blank');
+  if(!tab){
+    showToast('Popup blocked — try allowing popups for this site.', 'warning', 4000);
+  }
+}
+
+const STORAGE_KEY = 'archimedesmd_models_v1';
+
+const TASK_TIPS = {
+  classification: 'Use when the answer is a category or label — for example: approved/declined, positive/negative, low/medium/high risk. The model learns patterns from your historical data and assigns new inputs to one of those categories.',
+  regression:     'Use when the answer is a continuous number — for example: a price, a score, a length of stay, or a probability value. The model learns the relationship between your input columns and that number.',
+  clustering:     'Use when you have no predefined labels and want to discover natural groupings in your data. Useful for patient segmentation, customer profiling, or exploratory analysis where you don\'t yet know what categories exist.',
+};
+
+const ALGO_TIPS = {
+  RandomForest:              'Trains hundreds of decision trees on random subsets of your data and combines their votes. Handles missing values, outliers, and mixed data types well. A reliable choice when you\'re unsure where to start.',
+  GradientBoosting:          'Builds trees sequentially — each one learning from the mistakes of the last. Typically the most accurate algorithm on structured tabular data. Takes slightly longer to train but usually worth it.',
+  LogisticRegression:        'Finds a linear boundary between classes using probabilities. Trains quickly, is easy to interpret, and works well when the relationship between features and outcome is relatively straightforward.',
+  GradientBoostingRegressor: 'The regression equivalent of Gradient Boosting. Builds sequential trees to predict a continuous number. Excellent accuracy on most structured datasets.',
+  RandomForestRegressor:     'The regression equivalent of Random Forest. Combines many trees to predict a continuous number. Robust, resistant to overfitting, and works well out of the box.',
+  Ridge:                     'A regularized linear model that predicts numbers by fitting a straight line through your data. Best when the relationship between inputs and output is roughly linear and you want fast, interpretable results.',
+  KMeans:                    'Groups data points into clusters by minimizing the distance between each point and its cluster center. You choose the number of clusters; the algorithm finds the best groupings. Good for discovery and segmentation tasks.',
+};
+
+const ALGOS = {
+  classification: [
+    {value:'RandomForest', label:'Random Forest'},
+    {value:'GradientBoosting', label:'Gradient Boosting'},
+    {value:'LogisticRegression', label:'Logistic Regression'},
+  ],
+  regression: [
+    {value:'GradientBoostingRegressor', label:'Gradient Boosting Regressor'},
+    {value:'RandomForestRegressor', label:'Random Forest Regressor'},
+    {value:'Ridge', label:'Ridge Regression'},
+  ],
+  clustering: [
+    {value:'KMeans', label:'K-Means Clustering'},
+  ]
+};
+const EVALS_KEY   = 'archimedesmd_evals_v1';
+const API_BASE    = '/api';
+
+function escapeHTML(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+}
+
+function optionHTML(value, label){
+  return `<option value="${escapeHTML(value)}">${escapeHTML(label ?? value)}</option>`;
+}
+
+function renderDatasetHealthPreview(data, sourceLabel='uploaded dataset'){
+  const el = document.getElementById('dataset-health-preview');
+  if(!el || !data) return;
+  const rows = Number(data.rows || 0);
+  const cols = Number(data.cols || (data.columns ? data.columns.length : 0));
+  const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+  const columns = data.columns || [];
+  const samples = data.column_samples || {};
+  const sampleCols = Object.keys(samples).slice(0, 5);
+  const fallbackCols = sampleCols.length ? sampleCols : columns.slice(0, 5);
+  const likelyTarget = data.target_col || columns.find(c => /target|outcome|label|churn|default|fraud|readmit|converted|risk/i.test(c)) || columns[columns.length - 1] || 'choose a target';
+  const task = data.task || 'ready';
+  const algorithm = data.algorithm || 'report-first workflow';
+  const warningTone = warnings.length ? 'var(--gold)' : 'var(--emerald)';
+  const warningText = warnings.length ? `${warnings.length} note${warnings.length === 1 ? '' : 's'}` : 'clean start';
+  el.innerHTML = `
+    <div class="health-preview-title">Quick Dataset Read</div>
+    <div class="health-preview-grid">
+      <div class="health-preview-metric"><div class="health-preview-val">${escapeHTML(rows ? rows.toLocaleString() : '—')}</div><div class="health-preview-lbl">Rows</div></div>
+      <div class="health-preview-metric"><div class="health-preview-val">${escapeHTML(cols || '—')}</div><div class="health-preview-lbl">Columns</div></div>
+      <div class="health-preview-metric"><div class="health-preview-val" style="color:${warningTone}">${escapeHTML(warningText)}</div><div class="health-preview-lbl">Data Notes</div></div>
+      <div class="health-preview-metric"><div class="health-preview-val">${escapeHTML(task)}</div><div class="health-preview-lbl">Detected Use</div></div>
+    </div>
+    <div class="health-preview-note">
+      <strong style="color:var(--white)">Recommended next step:</strong>
+      Generate a report focused on <strong style="color:var(--bright)">${escapeHTML(likelyTarget)}</strong>, then train with <strong style="color:var(--magenta)">${escapeHTML(algorithm)}</strong> if prediction would help the decision.
+    </div>
+    <div class="health-preview-cols">
+      ${fallbackCols.map(c => `<span>${escapeHTML(c)}</span>`).join('')}
+    </div>`;
+  el.style.display = 'block';
+}
+
+function clearDatasetHealthPreview(){
+  const el = document.getElementById('dataset-health-preview');
+  if(el){ el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+function setReportStatus(loadingEl, main, sub=''){
+  if(!loadingEl) return;
+  loadingEl.innerHTML = `<div class="report-status">
+    <span class="report-pulse"></span>
+    <span class="report-status-text">
+      <span class="report-status-main">${escapeHTML(main)}</span>
+      ${sub ? `<span class="report-status-sub">${escapeHTML(sub)}</span>` : ''}
+    </span>
+  </div>`;
+}
+
+async function authHeaders(extra){
+  const { data:{ session } } = await sbClient.auth.getSession();
+  const token = session?.access_token || '';
+  return { 'Authorization': `Bearer ${token}`, ...extra };
+}
+
+function getModels(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }catch(e){return[];} }
+function setModels(a){ localStorage.setItem(STORAGE_KEY, JSON.stringify(a)); }
+function getEvals(){ return parseInt(localStorage.getItem(EVALS_KEY)||'0'); }
+function incEvals(){ localStorage.setItem(EVALS_KEY, String(getEvals()+1)); }
+
+// ── Toast — top-right, fully branded ──
+function showToast(msg, type='info', duration=3500){
+  const icons   = {success:'✓', error:'✕', info:'◈', warning:'⚡'};
+  const labels  = {success:'Archimedes MD', error:'Error', info:'Notice', warning:'Warning'};
+  const safeType = icons[type] ? type : 'info';
+  const t = document.createElement('div');
+  t.className = `toast ${safeType}`;
+  t.innerHTML = `
+    <span class="toast-icon">${icons[safeType]}</span>
+    <div style="flex:1">
+      <div class="toast-label">${labels[safeType]}</div>
+      <div class="toast-msg">${escapeHTML(msg)}</div>
+    </div>`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>{
+    t.style.animation = 'toastOut .3s ease forwards';
+    setTimeout(()=>t.remove(), 300);
+  }, duration);
+}
+
+function toggleTheme(){
+  const light = document.body.classList.toggle('light-mode');
+  localStorage.setItem('amd_theme', light ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = light ? '☾ Dark' : '☀ Soft';
+}
+(function(){
+  if(localStorage.getItem('amd_theme') === 'light'){
+    document.body.classList.add('light-mode');
+    document.getElementById('theme-toggle').textContent = '☾ Dark';
+  }
+})();
+
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('mob-overlay').classList.toggle('show');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('mob-overlay').classList.remove('show');
+}
+
+function renderFeatureImportance(fi, containerId){
+  const container = document.getElementById(containerId);
+  if(!container || !fi || !Object.keys(fi).length) return;
+  const entries = Object.entries(fi);
+  const max = entries[0][1];
+  const bars = entries.map(([name, val])=>{
+    const pct = max > 0 ? Math.round((val/max)*100) : 0;
+    const display = (val*100).toFixed(1)+'%';
+    const safeName = escapeHTML(name);
+    const safeDisplay = escapeHTML(display);
+    return `<div class="fi-row">
+      <div class="fi-label" title="${safeName}">${safeName}</div>
+      <div class="fi-bar-wrap"><div class="fi-bar" style="width:${pct}%"></div></div>
+      <div class="fi-pct">${safeDisplay}</div>
+    </div>`;
+  }).join('');
+  container.innerHTML = `<div class="fi-wrap">
+    <div class="fi-title">Feature Importance — What drove this prediction</div>
+    ${bars}
+  </div>`;
+  container.style.display = 'block';
+}
+
+const titles = {overview:'Overview',train:'Analyze Data','model-train':'Train Model',library:'Model Library',recall:'Evaluate Data',billing:'Billing',organize:'Data Organization'};
+function goBackToAnalysis(){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-train').classList.add('active');
+  document.getElementById('topbar-title').textContent = 'Analyze Data';
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if(n.textContent.trim().includes('Analyze Data')) n.classList.add('active');
+  });
+}
+
+function goToTrainPanel(){
+  if(!currentFileId){ showToast('Please upload a dataset first.','warning'); return; }
+  showPanel('model-train', null);
+  const info = document.getElementById('train-dataset-info');
+  const infoText = document.getElementById('train-file-info');
+  if(info && infoText){
+    infoText.textContent = document.getElementById('file-info').textContent || 'Dataset loaded';
+    info.style.display = 'block';
+  }
+  // Copy columns from reportTargetSel into targetColSel
+  const rSel = document.getElementById('reportTargetSel');
+  const sel = document.getElementById('targetColSel');
+  if(sel && rSel && rSel.options.length > 1){
+    const cols = Array.from(rSel.options).slice(1).map(o => o.value);
+    sel.innerHTML = '<option value="" disabled selected>— Select a target column —</option>' +
+      cols.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+    if(typeof initCustomSelect === 'function') initCustomSelect('targetColSel');
+  }
+}
+
+function showPanel(id, btn){
+  closeSidebar();
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('topbar-title').textContent = titles[id]||id;
+  if(btn) btn.classList.add('active');
+  if(id==='library') renderLibrary();
+  if(id==='recall')  populateRecallSelect();
+
+  if(id==='train'){
+    document.getElementById('drop-title').textContent='Drag your dataset here';
+    document.getElementById('file-info').style.display='none';
+    document.getElementById('upload-progress').style.display='none';
+    document.getElementById('upload-fill').style.width='0%';
+    document.getElementById('step2-card').style.display='none';
+    document.getElementById('report-cta').style.display='none';
+    const _tmctaN=document.getElementById('train-model-cta'); if(_tmctaN) _tmctaN.style.display='none';
+    const tmcta = document.getElementById('train-model-cta');
+    if(tmcta) tmcta.style.display='none';
+    currentFileId=null; currentAnalysis=null; currentModelId=null; pendingModel=null;
+    try{
+      sessionStorage.removeItem('amd_upload_state');
+      sessionStorage.removeItem('amd_report_v1');
+    } catch(_){}
+    const banner = document.getElementById('last-report-banner');
+    if(banner) banner.style.display = 'none';
+  }
+
+  if(id==='model-train'){
+    document.getElementById('step3-card').style.display='none';
+    document.getElementById('train-fill').style.width='0%';
+    document.getElementById('train-status').textContent='';
+    document.getElementById('real-stats').style.display='none';
+    document.getElementById('saveRealBtn').style.display='none';
+    document.getElementById('downloadBtn').style.display='none';
+    document.getElementById('train-fi').style.display='none';
+    document.getElementById('train-fi').innerHTML='';
+    document.getElementById('modelName').value='';
+  }
+}
+
+function updateAlgorithms(){
+  const task = document.getElementById('taskSel').value;
+  const sel  = document.getElementById('algoSel');
+  const options = ALGOS[task] || ALGOS.classification;
+  sel.innerHTML = options.map(a=>`<option value="${a.value}">${a.label}</option>`).join('');
+  updateAlgoTip();
+}
+function updateAlgoTip(){
+  const val = document.getElementById('algoSel').value;
+  const box = document.getElementById('algo-tip-box');
+  if(box) box.textContent = ALGO_TIPS[val] || '';
+}
+function updateTaskTip(){
+  const val = document.getElementById('taskSel').value;
+  const box = document.getElementById('task-tip-box');
+  if(box) box.textContent = TASK_TIPS[val] || '';
+}
+updateAlgorithms();
+updateTaskTip();
+
+function renderOverview(){
+  const models = getModels();
+  document.getElementById('ov-total').textContent = models.length;
+  document.getElementById('ov-evals').textContent = getEvals();
+  if(models.length > 0){
+    document.getElementById('welcome-title').textContent = 'Your Model Lab';
+    document.getElementById('welcome-msg').textContent =
+      `You have ${models.length} model${models.length===1?'':'s'} trained and ready. Upload a new dataset to keep building, or head to Evaluate Data to run predictions on your existing models.`;
+    document.getElementById('welcome-btn').textContent = 'Train a new model →';
+  } else {
+    document.getElementById('welcome-title').textContent = 'Welcome to Archimedes MD';
+    document.getElementById('welcome-msg').textContent =
+      'Upload any dataset — medical records, financial data, images, or text. Archimedes MD trains a real AI model on your data and delivers predictions on any new input forever.';
+    document.getElementById('welcome-btn').textContent = 'Design your first model →';
+  }
+  const rec = document.getElementById('ov-recent');
+  if(!models.length){ rec.innerHTML='<div class="empty"><div class="empty-icon">◎</div><p>No models yet.</p></div>'; return; }
+  const colors=['#00d4ff','#e040fb','#ff4444','#ffd600','#00c853','#7c4dff'];
+  rec.innerHTML = models.slice(0,3).map((m,i)=>`
+    <div class="model-card" style="margin-bottom:.875rem">
+      <div class="model-icon" style="color:${colors[i%colors.length]};background:${colors[i%colors.length]}18;border:1px solid ${colors[i%colors.length]}33">${escapeHTML((m.name || '').slice(0,2).toUpperCase())}</div>
+      <div class="model-info"><div class="model-name">${escapeHTML(m.name)}</div><div class="model-meta">${escapeHTML(m.algo)} · v${escapeHTML(m.version||1)} · ${escapeHTML(m.created)}</div></div>
+      <span class="badge-ready">ready</span>
+    </div>`).join('');
+}
+
+let currentFileId=null, currentAnalysis=null, currentModelId=null, pendingModel=null;
+
+const fileInput = document.getElementById('fileInput');
+const dz = document.getElementById('drop-zone');
+
+fileInput.addEventListener('change', e=>{ if(e.target.files&&e.target.files[0]) handleFile(e.target.files[0]); });
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', ()=>{ dz.classList.remove('drag'); });
+dz.addEventListener('drop', e=>{ e.preventDefault(); dz.classList.remove('drag'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+async function handleFile(file){
+  // Reset previous file state before uploading new file
+  document.querySelectorAll('#step2-card .upload-warn').forEach(el => el.remove());
+  document.getElementById('step2-card').style.display='none';
+  document.getElementById('report-cta').style.display='none';
+    const _tmctaN=document.getElementById('train-model-cta'); if(_tmctaN) _tmctaN.style.display='none';
+  clearDatasetHealthPreview();
+  document.getElementById('file-info').textContent='';
+  document.querySelectorAll('#step2-card .warn-div').forEach(el=>el.remove());
+
+  document.getElementById('drop-title').textContent = file.name+' ('+Math.round(file.size/1024)+'KB)';
+  document.getElementById('file-info').style.display='block';
+  document.getElementById('file-info').textContent='Uploading and analyzing...';
+  document.getElementById('upload-progress').style.display='block';
+  document.getElementById('upload-fill').style.width='30%';
+  const formData = new FormData();
+  formData.append('file', file);
+  try{
+    const resp = await fetch(API_BASE+'/upload-and-analyze', {method:'POST', headers: await authHeaders(), body:formData});
+    if(!resp.ok){ const e=await resp.json(); throw new Error(e.detail||'Upload failed'); }
+    const data = await resp.json();
+    document.getElementById('upload-fill').style.width='100%';
+    currentFileId = data.file_id;
+    currentAnalysis = data;
+    // Clear needsReupload flag if they've just re-uploaded manually
+    try{
+      const s = JSON.parse(sessionStorage.getItem('amd_upload_state') || '{}');
+      if(s.needsReupload){ delete s.needsReupload; sessionStorage.setItem('amd_upload_state', JSON.stringify(s)); }
+    } catch(_){}
+    // Re-enable train button in case it was disabled by the reupload warning
+    const tb = document.getElementById('trainBtn');
+    if(tb){ tb.disabled=false; tb.textContent='⬡ Train Real Model on My Data'; }
+    document.getElementById('reupload-warning')?.remove();
+    document.getElementById('file-info').textContent = file.name+' — '+data.rows.toLocaleString()+' rows × '+data.cols+' columns';
+    document.getElementById('step2-card').style.display='block';
+    document.getElementById('report-cta').style.display='block';
+    const _tmcta2=document.getElementById('train-model-cta'); if(_tmcta2) _tmcta2.style.display='block';
+    if(data.warnings && data.warnings.length > 0){
+      const warnDiv = document.createElement('div');
+      warnDiv.className = 'upload-warn';
+      warnDiv.style.cssText = 'margin-bottom:1rem;padding:.75rem 1rem;background:rgba(255,214,0,.06);border:1px solid rgba(255,214,0,.2);border-radius:8px;font-size:.82rem;color:var(--gold);white-space:pre-line';
+      warnDiv.textContent = data.warnings.join('\n');
+      document.getElementById('step2-card').insertBefore(warnDiv, document.getElementById('dataset-health-preview'));
+    }
+    renderDatasetHealthPreview(data, 'uploaded dataset');
+    const sel = document.getElementById('targetColSel');
+    sel.innerHTML = '<option value="" disabled selected>— Select a target column —</option>' + data.columns.map(c=>optionHTML(c)).join('');
+  const rSel = document.getElementById('reportTargetSel');
+  if(rSel){ rSel.innerHTML = '<option value="">Exploratory — full dataset profile, no prediction target</option>' + data.columns.map(c=>optionHTML(c)).join(''); }
+    function updateColPreview(){
+      const col = sel.value;
+      const info = data.column_samples && data.column_samples[col];
+      const preview = document.getElementById('col-preview');
+      if(info && preview){
+        preview.textContent = `Sample values: ${info.samples.slice(0,5).join(', ')} · ${info.n_unique} unique values`;
+        preview.style.display = 'block';
+      }
+    }
+    sel.addEventListener('change', updateColPreview);
+    updateColPreview();
+    document.getElementById('taskSel').value = data.task;
+    updateTaskTip();
+    var taskVal = data.task;
+    var algoSel = document.getElementById('algoSel');
+    var algoOptions = ALGOS[taskVal] || ALGOS.classification;
+    algoSel.innerHTML = algoOptions.map(function(a){ return '<option value="' + a.value + '">' + a.label + '</option>'; }).join('');
+    algoSel.value = data.algorithm;
+    updateAlgoTip();
+    // ── Persist upload state so returning from the report restores this step ──
+    try{
+      // Also store the raw file as base64 so we can re-upload if the server
+      // has wiped its ephemeral disk (e.g. Railway restart between sessions)
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          sessionStorage.setItem('amd_upload_state', JSON.stringify({
+            file_id:   data.file_id,
+            analysis:  data,
+            filename:  file.name,
+            filesize:  file.size,
+            filetype:  file.type || 'text/csv',
+            filedata:  reader.result, // base64 data URL
+            modelName: document.getElementById('modelName').value || '',
+          }));
+        } catch(e){
+          // sessionStorage quota exceeded (large file) — store without filedata, flag it
+          try{
+            sessionStorage.setItem('amd_upload_state', JSON.stringify({
+              file_id:      data.file_id,
+              analysis:     data,
+              filename:     file.name,
+              filesize:     file.size,
+              modelName:    document.getElementById('modelName').value || '',
+              needsReupload: true, // file was too large to cache
+            }));
+          } catch(_){}
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch(_){}
+
+  }catch(err){
+    document.getElementById('file-info').textContent='Error: '+err.message;
+    document.getElementById('file-info').style.color='var(--coral)';
+  }
+}
+
+async function reuploadFileIfNeeded(){
+  // Always re-upload the cached file when returning from the report.
+  // Railway's ephemeral disk is wiped between restarts so we can't rely
+  // on the old file_id still being valid — just re-upload unconditionally.
+  let saved;
+  try{ saved = JSON.parse(sessionStorage.getItem('amd_upload_state')); } catch(_){ return; }
+  if(!saved || !saved.filedata) return;
+
+  try{
+    const res  = await fetch(saved.filedata);
+    const blob = await res.blob();
+    const file = new File([blob], saved.filename, { type: saved.filetype || 'text/csv' });
+    const formData = new FormData();
+    formData.append('file', file);
+    const resp = await fetch(API_BASE+'/upload-and-analyze', {
+      method:'POST',
+      headers: await authHeaders(),
+      body: formData
+    });
+    if(resp.ok){
+      const data = await resp.json();
+      currentFileId   = data.file_id;
+      currentAnalysis = data;
+      saved.file_id   = data.file_id;
+      saved.analysis  = data;
+      try{ sessionStorage.setItem('amd_upload_state', JSON.stringify(saved)); } catch(_){}
+    } else {
+      const e = await resp.json().catch(()=>({}));
+      throw new Error(e.detail || 'Re-upload failed');
+    }
+  } catch(err){
+    showToast('Could not restore your file: ' + err.message, 'error', 6000);
+    throw err; // stop training
+  }
+}
+
+async function trainRealModel(){
+  const name = document.getElementById('modelName').value.trim();
+  if(!name){ showToast('Please enter a model name.','warning'); return; }
+  if(!currentFileId){ showToast('Please upload a file first.','warning'); return; }
+  const targetCol = document.getElementById('targetColSel').value;
+  if(!targetCol){ showToast('Please select a target column — this is the outcome your model will learn to predict.','warning'); return; }
+  const task      = document.getElementById('taskSel').value;
+  const algo      = document.getElementById('algoSel').value;
+  const btn       = document.getElementById('trainBtn');
+  btn.disabled=true; btn.textContent='Preparing data...';
+
+  btn.textContent='Training...';
+  document.getElementById('step3-card').style.display='block';
+  document.getElementById('train-fill').style.width='10%';
+  document.getElementById('train-status').textContent='Preprocessing data...';
+
+  let prog=10;
+  const msgs=['Splitting train/test data...','Fitting model...','Evaluating on test set...','Computing metrics...','Saving model...'];
+  const interval=setInterval(()=>{
+    prog=Math.min(85,prog+Math.random()*8);
+    document.getElementById('train-fill').style.width=prog+'%';
+    document.getElementById('train-status').textContent=msgs[Math.min(4,Math.floor((prog-10)/15))];
+  },800);
+
+  try{
+    const url=`${API_BASE}/train-real?file_id=${currentFileId}&model_name=${encodeURIComponent(name)}&target_col=${encodeURIComponent(targetCol)}&task=${task}&algorithm=${algo}`;
+    const resp=await fetch(url,{method:'POST', headers: await authHeaders()});
+    if(!resp.ok){
+      const e=await resp.json();
+      if(resp.status===403){
+        // Plan limit hit — redirect to billing
+        showToast(e.detail || 'Model limit reached. Upgrade to save more.', 'warning', 6000);
+        setTimeout(()=>{ showPanel('billing', null); showUpgradeModal(getUserNextPlan()); }, 1500);
+        btn.disabled=false; btn.textContent='⬡ Train Real Model on My Data';
+        clearInterval(interval);
+        return;
+      }
+      throw new Error(e.detail||'Training failed');
+    }
+    const data=await resp.json();
+    clearInterval(interval);
+    document.getElementById('train-fill').style.width='100%';
+    document.getElementById('train-status').textContent=data.message;
+    currentModelId=data.model_id;
+    const m=data.metrics;
+    let statsHTML='';
+    if(task==='classification'){
+      statsHTML=`
+        <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.accuracy)}%</div><div class="stat-card-lbl">Best Accuracy</div></div>
+        <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.algorithm_selected||algo)}</div><div class="stat-card-lbl">Best Algorithm</div></div>
+        <div class="stat-card"><div class="stat-card-val">${(m.train_samples||0).toLocaleString()}</div><div class="stat-card-lbl">Trained On</div></div>`;
+      if(m.all_scores){
+        statsHTML+=`<div style="grid-column:1/-1;background:rgba(0,8,25,.7);border:1px solid rgba(0,212,255,.12);border-radius:10px;padding:.875rem;font-size:.78rem;color:var(--muted)">
+          <div style="color:var(--bright);font-weight:600;margin-bottom:.4rem;font-size:.72rem;letter-spacing:1px;text-transform:uppercase">Algorithm Comparison</div>
+          ${Object.entries(m.all_scores).map(([k,v])=>`<div style="display:flex;justify-content:space-between;margin:.25rem 0;${k===m.algorithm_selected?'color:var(--white);font-weight:600':''}">${escapeHTML(k)}: <span>${escapeHTML(v)}%${k===m.algorithm_selected?' ✓':''}</span></div>`).join('')}
+        </div>`;
+      }
+    }else if(task==='regression'){
+      statsHTML=`
+        <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.r2_score)}</div><div class="stat-card-lbl">Best R² Score</div></div>
+        <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.algorithm_selected||algo)}</div><div class="stat-card-lbl">Best Algorithm</div></div>
+        <div class="stat-card"><div class="stat-card-val">${(m.train_samples||0).toLocaleString()}</div><div class="stat-card-lbl">Trained On</div></div>`;
+      if(m.all_scores){
+        statsHTML+=`<div style="grid-column:1/-1;background:rgba(0,8,25,.7);border:1px solid rgba(0,212,255,.12);border-radius:10px;padding:.875rem;font-size:.78rem;color:var(--muted)">
+          <div style="color:var(--bright);font-weight:600;margin-bottom:.4rem;font-size:.72rem;letter-spacing:1px;text-transform:uppercase">Algorithm Comparison</div>
+          ${Object.entries(m.all_scores).map(([k,v])=>`<div style="display:flex;justify-content:space-between;margin:.25rem 0;${k===m.algorithm_selected?'color:var(--white);font-weight:600':''}">${escapeHTML(k)}: <span>${escapeHTML(v)} R²${k===m.algorithm_selected?' ✓':''}</span></div>`).join('')}
+        </div>`;
+      }
+    }else{
+      statsHTML=`<div class="stat-card"><div class="stat-card-val">${escapeHTML(m.n_clusters)}</div><div class="stat-card-lbl">Clusters Found</div></div>`;
+    }
+    const totalSamples = (m.train_samples||0) + (m.test_samples||0);
+    let warningHTML = '';
+    if(totalSamples < 1000){
+      warningHTML = `<div style="margin-top:1rem;padding:.75rem 1rem;background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.3);border-radius:8px;font-size:.82rem;color:#ff6b6b">⚠️ <strong>Small dataset warning:</strong> This model was trained on only ${totalSamples.toLocaleString()} rows. Results may not be reliable. We recommend at least 5,000 rows for general use and 50,000+ for medical applications.</div>`;
+    } else if(totalSamples < 5000){
+      warningHTML = `<div style="margin-top:1rem;padding:.75rem 1rem;background:rgba(255,214,0,.06);border:1px solid rgba(255,214,0,.25);border-radius:8px;font-size:.82rem;color:var(--gold)">⚡ <strong>Limited dataset:</strong> ${totalSamples.toLocaleString()} rows is usable but more data will improve accuracy. For medical or financial decisions, aim for 10,000+ rows.</div>`;
+    } else {
+      warningHTML = `<div style="margin-top:1rem;padding:.75rem 1rem;background:rgba(0,200,83,.06);border:1px solid rgba(0,200,83,.2);border-radius:8px;font-size:.82rem;color:var(--emerald)">✓ <strong>Good dataset size:</strong> ${totalSamples.toLocaleString()} rows provides a solid foundation for reliable predictions.</div>`;
+    }
+    document.getElementById('real-stats').innerHTML=statsHTML;
+    document.getElementById('real-stats').style.display='grid';
+    document.getElementById('real-stats').insertAdjacentHTML('afterend', warningHTML);
+    document.getElementById('saveRealBtn').style.display='block';
+    document.getElementById('downloadBtn').style.display='block';
+    if(m.feature_importance){ renderFeatureImportance(m.feature_importance, 'train-fi'); }
+    pendingModel={
+      id:data.model_id, name, domain:task, algo:data.algorithm,
+      accuracy:task==='classification'?m.accuracy+'%':(m.r2_score||0)+' R²',
+      trainTime:'Real training', created:new Date().toLocaleDateString(),
+      version:1, bufferCount:0, realModel:true, metrics:m, targetCol
+    };
+  }catch(err){
+    clearInterval(interval);
+    document.getElementById('train-status').textContent='Error: '+err.message;
+    document.getElementById('train-status').style.color='var(--coral)';
+  }
+  btn.disabled=false; btn.textContent='⬡ Train Real Model on My Data';
+}
+
+// Plan limits — keyed by plan name (all lowercase)
+const PLAN_LIMITS = { 'free': 1, 'pro': 5, 'team': 15, 'unlimited': Infinity };
+
+// Data Organization usage limits
+const ORG_LIMITS = { 'free': 5, 'pro': Infinity, 'team': Infinity, 'unlimited': Infinity };
+const ORG_USAGE_KEY = 'archimedesmd_org_usage_v1';
+
+function getOrgUsage(){
+  try{ return parseInt(localStorage.getItem(ORG_USAGE_KEY) || '0'); } catch(_){ return 0; }
+}
+
+function incOrgUsage(){
+  try{ localStorage.setItem(ORG_USAGE_KEY, String(getOrgUsage() + 1)); } catch(_){}
+}
+
+function getOrgLimit(){
+  const planText = (document.querySelector('.user-plan')?.textContent || 'free').toLowerCase();
+  if(planText.includes('unlimited')) return ORG_LIMITS.unlimited;
+  if(planText.includes('team')) return ORG_LIMITS.team;
+  if(planText.includes('pro')) return ORG_LIMITS.pro;
+  return ORG_LIMITS.free;
+}
+
+function checkOrgLimit(){
+  const limit = getOrgLimit();
+  if(limit === Infinity) return true;
+  const usage = getOrgUsage();
+  return usage < limit;
+}
+
+function renderOrgUsageDisplay(){
+  const el = document.getElementById('org-usage-display');
+  if(!el) return;
+  const limit = getOrgLimit();
+  const usage = getOrgUsage();
+  if(limit === Infinity){
+    el.textContent = '✓ Unlimited data organization included in your plan';
+    el.style.color = 'var(--teal)';
+  } else {
+    const remaining = Math.max(0, limit - usage);
+    el.textContent = `${remaining} of ${limit} free uses remaining`;
+    el.style.color = remaining > 0 ? 'var(--muted)' : 'var(--coral)';
+  }
+}
+
+function getUserNextPlan(){
+  const planText = (document.querySelector('.user-plan')?.textContent || 'free').toLowerCase();
+  if(planText.includes('free')) return 'Pro';
+  if(planText.includes('pro')) return 'Team';
+  return 'Unlimited';
+}
+
+// Accounts that always get unlimited access (founders/testers)
+const OWNER_EMAILS = ['dashfarrell@gmail.com', 'freshpineapples1234@gmail.com'];
+
+function getUserPlanLimit(){
+  // Owner override — always unlimited
+  if(currentUser && OWNER_EMAILS.includes(currentUser.email)) return PLAN_LIMITS.unlimited;
+  const planText = (document.querySelector('.user-plan')?.textContent || 'free').toLowerCase();
+  if(planText.includes('unlimited')) return PLAN_LIMITS.unlimited;
+  if(planText.includes('team'))      return PLAN_LIMITS.team;
+  if(planText.includes('pro'))       return PLAN_LIMITS.pro;
+  return PLAN_LIMITS.free; // default to free
+}
+
+function saveRealModel(){
+  if(!pendingModel){ showToast('No model to save — please train first.','warning'); return; }
+  if(currentModelId) pendingModel.id=currentModelId;
+  const models=getModels();
+  const limit = getUserPlanLimit();
+
+  if(models.length >= limit){
+    // Hit the limit — show upgrade modal with context
+    const planText = (document.querySelector('.user-plan')?.textContent || 'Free Plan');
+    showToast(`${planText} allows ${limit} saved model${limit===1?'':'s'}. Upgrade to save more.`, 'warning', 5000);
+    // Flash the billing panel after a short delay
+    setTimeout(()=>{
+      showPanel('billing', null);
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      // Pre-open the upgrade modal for the next sensible tier
+      if(limit === 1) showUpgradeModal('Pro');
+      else if(limit === 5) showUpgradeModal('Team');
+      else showUpgradeModal('Unlimited');
+    }, 1200);
+    return;
+  }
+
+  models.unshift(pendingModel);
+  setModels(models);
+  const btn=document.getElementById('saveRealBtn');
+  btn.textContent='◈ Saved!';
+  btn.style.background='linear-gradient(135deg,var(--teal),var(--emerald))';
+  showToast('Model saved to your library!','success');
+  setTimeout(()=>{ btn.textContent='◈ Save to Library'; btn.style.background=''; },2000);
+  pendingModel=null;
+}
+
+async function downloadModel(){
+  if(!currentModelId) return;
+  try{
+    const resp = await fetch(API_BASE+'/model/'+currentModelId+'/download', {
+      method: 'GET',
+      headers: await authHeaders()
+    });
+    if(!resp.ok){ showToast('Download failed — please try again.', 'error'); return; }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (currentModelId || 'model') + '.pkl';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e){
+    showToast('Download failed: ' + e.message, 'error');
+  }
+}
+
+function renderLibrary(){
+  const models=getModels();
+  const list=document.getElementById('libraryList');
+  const empty=document.getElementById('libraryEmpty');
+  if(!models.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const colors=['#00d4ff','#e040fb','#ff4444','#ffd600','#00c853','#7c4dff','#ff6d00'];
+  list.innerHTML=models.map((m,i)=>`
+    <div class="model-card">
+      <div class="model-icon" style="color:${colors[i%colors.length]};background:${colors[i%colors.length]}18;border:1px solid ${colors[i%colors.length]}33">${escapeHTML((m.name || '').slice(0,2).toUpperCase())}</div>
+      <div class="model-info">
+        <div class="model-name">${escapeHTML(m.name)}</div>
+        <div class="model-meta">${escapeHTML(m.domain)} · ${escapeHTML(m.algo)}</div>
+        <div class="model-tags">
+          <span class="tag" style="color:#00d4ff;border-color:rgba(0,212,255,.3)">${escapeHTML(m.algo)}</span>
+          <span class="tag" style="color:#00b894;border-color:rgba(0,184,148,.3)">${escapeHTML(m.accuracy)}</span>
+          <span class="tag" style="color:#7c4dff;border-color:rgba(124,77,255,.3)">v${escapeHTML(m.version||1)}</span>
+        </div>
+      </div>
+      <div class="model-actions">
+        <span class="badge-ready">ready</span>
+        <span style="font-size:.72rem;color:var(--muted);white-space:nowrap">${escapeHTML(m.created)}</span>
+        <button class="btn-xs outline" onclick="useModel(${i})">Evaluate →</button>
+        <button class="btn-xs danger" onclick="deleteModel(${i})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function useModel(i){
+  populateRecallSelect();
+  document.getElementById('recallSel').value=i;
+  showPanel('recall',null);
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+}
+function deleteModel(i){
+  const models=getModels();
+  const name=models[i].name;
+  const id='del-confirm-'+Date.now();
+  const t=document.createElement('div');
+  t.className='toast warning';
+  t.style.pointerEvents='auto';
+  t.innerHTML=`<span class="toast-icon">⚠</span>
+    <div style="flex:1">
+      <div class="toast-label">Confirm Delete</div>
+      <div class="toast-msg">"${escapeHTML(name)}"</div>
+    </div>
+    <button onclick="confirmDelete(${i},'${id}')" style="margin-left:.75rem;padding:.3rem .8rem;border-radius:6px;background:rgba(255,68,68,.25);border:1px solid rgba(255,68,68,.5);color:#ff8080;cursor:pointer;font-size:.78rem;font-weight:600;white-space:nowrap">Delete</button>
+    <button onclick="document.getElementById('${id}').remove()" style="margin-left:.4rem;padding:.3rem .8rem;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:var(--muted);cursor:pointer;font-size:.78rem;white-space:nowrap">Cancel</button>`;
+  t.id=id;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>{ if(document.getElementById(id)) document.getElementById(id).remove(); },6000);
+}
+function confirmDelete(i, toastId){
+  document.getElementById(toastId)?.remove();
+  const models=getModels();
+  models.splice(i,1); setModels(models); renderLibrary();
+  showToast('Model deleted.','info');
+}
+
+function populateRecallSelect(){
+  const models=getModels();
+  const sel=document.getElementById('recallSel');
+  if(!models.length){ sel.innerHTML='<option>No models saved yet</option>'; return; }
+  sel.innerHTML=models.map((m,i)=>`<option value="${i}">${escapeHTML(m.name)} — ${escapeHTML(m.algo)} v${escapeHTML(m.version||1)}</option>`).join('');
+  onModelSelect();
+}
+
+function onModelSelect(){
+  const models=getModels();
+  const idx=parseInt(document.getElementById('recallSel').value)||0;
+  const model=models[idx];
+
+  // Reset output
+  document.getElementById('newData').value='';
+  document.getElementById('evalStream').textContent='';
+  document.getElementById('inferCode').textContent='';
+  document.getElementById('downloadScriptBtn').style.display='none';
+  lastEvalModel = null;
+  lastEvalInput = null;
+  lastEvalPrediction = null;
+  const fbSection = document.getElementById('feedback-section');
+  if(fbSection) fbSection.style.display='none';
+  document.getElementById('humanSummary').textContent='';
+  document.getElementById('evalOutput').classList.remove('show');
+  document.getElementById('pred-badge-wrap').style.display='none';
+  document.getElementById('eval-fi').style.display='none';
+  document.getElementById('raw-output-wrap').style.display='none';
+  document.getElementById('raw-toggle-icon').textContent='▶';
+
+  if(!model) return;
+
+  // Show model info card
+  const info = document.getElementById('eval-model-info');
+  const taskColor = model.domain==='classification'?'var(--bright)':model.domain==='regression'?'var(--gold)':'var(--magenta)';
+  info.innerHTML = `
+    <div style="text-align:center;padding:.5rem">
+      <div style="font-size:.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem">Algorithm</div>
+      <div style="font-size:.85rem;font-weight:600;color:var(--white)">${escapeHTML(model.algo)}</div>
+    </div>
+    <div style="text-align:center;padding:.5rem">
+      <div style="font-size:.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem">Accuracy</div>
+      <div style="font-size:.85rem;font-weight:600;color:var(--emerald)">${escapeHTML(model.accuracy)}</div>
+    </div>
+    <div style="text-align:center;padding:.5rem">
+      <div style="font-size:.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem">Target</div>
+      <div style="font-size:.85rem;font-weight:600;color:${taskColor}">${escapeHTML(model.targetCol||'—')}</div>
+    </div>
+    <div style="text-align:center;padding:.5rem">
+      <div style="font-size:.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem">Trained</div>
+      <div style="font-size:.85rem;font-weight:600;color:var(--white)">${escapeHTML(model.created)}</div>
+    </div>`;
+  info.style.display='grid';
+
+  // Build smart input fields from feature names
+  const inputCard = document.getElementById('eval-input-card');
+  inputCard.style.display='block';
+  const fieldsWrap = document.getElementById('eval-fields');
+  fieldsWrap.innerHTML='';
+
+  const features = model.metrics?.feature_importance
+    ? Object.keys(model.metrics.feature_importance)
+    : (model.featureNames || []);
+
+  // Only filter out the exact target column and pure ID columns
+  const targetCol = (model.targetCol || '').toLowerCase();
+  const filteredFeatures = features.filter(feat => {
+    const f = feat.toLowerCase();
+    if(f === targetCol) return false; // exact target column
+    if(f === 'customer_id' || f === 'user_id' || f === 'row_id' || f === 'index' || f === 'unnamed') return false;
+    return true; // keep everything else including 'default', 'id' substrings, etc.
+  });
+
+  if(filteredFeatures.length){
+    filteredFeatures.forEach(feat=>{
+      const div=document.createElement('div');
+      div.innerHTML=`
+        <label style="font-size:.68rem;margin-top:0">${escapeHTML(feat)}</label>
+        <input type="text" class="eval-field-input" data-feature="${escapeHTML(feat)}" placeholder="e.g. ${escapeHTML(getSampleValue(model, feat))}" style="margin-top:.25rem">`;
+      fieldsWrap.appendChild(div);
+    });
+  } else {
+    fieldsWrap.innerHTML='<p style="font-size:.82rem;color:var(--muted);grid-column:1/-1">Feature names not available — use the raw input below.</p>';
+  }
+
+  // Load evaluation history for this model
+  renderEvalHistory(model.name);
+}
+
+function getSampleValue(model, feat){
+  const f = feat.toLowerCase();
+  // Ratio / rate / percentage
+  if(f.includes('ratio') || f.includes('rate') || f.includes('pct') || f.includes('percent')) return '0.3';
+  // Age
+  if(f === 'age' || f.includes('_age') || f.includes('age_')) return '35';
+  // Credit score
+  if(f.includes('credit_score') || f.includes('fico')) return '720';
+  // Score (generic)
+  if(f.includes('score')) return '700';
+  // Income / salary / revenue
+  if(f.includes('income') || f.includes('salary') || f.includes('revenue') || f.includes('earnings')) return '65000';
+  // Balance / amount / value / price
+  if(f.includes('balance') || f.includes('amount') || f.includes('value') || f.includes('price')) return '10000';
+  // Loan term / months / days / duration
+  if(f.includes('term') || f.includes('month') || f.includes('day') || f.includes('duration')) return '36';
+  // Year
+  if(f.includes('year') || f.includes('yr')) return '2023';
+  // Count / num / number
+  if(f.includes('count') || f.startsWith('num_') || f.includes('_num') || f.includes('number')) return '3';
+  // Boolean / flag / has / is
+  if(f.startsWith('has_') || f.startsWith('is_') || f.includes('_flag') || f.includes('mortgage') || f.includes('default')) return '1';
+  // Glucose / BMI / medical
+  if(f.includes('glucose')) return '120';
+  if(f.includes('bmi')) return '26.5';
+  if(f.includes('blood') || f.includes('pressure')) return '80';
+  if(f.includes('insulin')) return '80';
+  if(f.includes('pregnancies') || f.includes('preg')) return '1';
+  // Latitude / longitude
+  if(f.includes('lat')) return '40.7';
+  if(f.includes('lon') || f.includes('lng')) return '-74.0';
+  return '0';
+}
+
+// ── Evaluation History ──
+const EVAL_HISTORY_KEY = 'archimedesmd_eval_history_v1';
+
+function getEvalHistory(modelName){
+  try{
+    const all = JSON.parse(localStorage.getItem(EVAL_HISTORY_KEY) || '{}');
+    return all[modelName] || [];
+  } catch(_){ return []; }
+}
+
+function saveEvalHistory(modelName, entry){
+  try{
+    const all = JSON.parse(localStorage.getItem(EVAL_HISTORY_KEY) || '{}');
+    const hist = all[modelName] || [];
+    hist.unshift(entry);
+    if(hist.length > 5) hist.pop(); // keep last 5
+    all[modelName] = hist;
+    localStorage.setItem(EVAL_HISTORY_KEY, JSON.stringify(all));
+  } catch(_){}
+}
+
+function clearEvalHistory(){
+  const models = getModels();
+  const idx = parseInt(document.getElementById('recallSel').value)||0;
+  const model = models[idx];
+  if(!model) return;
+  try{
+    const all = JSON.parse(localStorage.getItem(EVAL_HISTORY_KEY) || '{}');
+    delete all[model.name];
+    localStorage.setItem(EVAL_HISTORY_KEY, JSON.stringify(all));
+  } catch(_){}
+  renderEvalHistory(model.name);
+}
+
+function renderEvalHistory(modelName){
+  const hist = getEvalHistory(modelName);
+  const wrap = document.getElementById('eval-history-wrap');
+  const list = document.getElementById('eval-history-list');
+  if(!hist.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  list.innerHTML = hist.map((e,i) => {
+    const predStr = escapeHTML(e.prediction);
+    const modelNameArg = encodeURIComponent(modelName);
+    return `<div style="display:flex;align-items:center;gap:.75rem;padding:.6rem .875rem;
+      background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.1);border-radius:8px;
+      font-size:.8rem;cursor:pointer;transition:all .2s"
+      onclick="restoreEval(${i}, decodeURIComponent('${modelNameArg}'))"
+      onmouseover="this.style.borderColor='rgba(0,212,255,.3)'"
+      onmouseout="this.style.borderColor='rgba(0,212,255,.1)'">
+      <div style="font-family:'Cinzel',serif;font-size:.85rem;font-weight:700;
+        color:var(--bright);min-width:32px;text-align:center">${predStr}</div>
+      <div style="flex:1;color:var(--muted)">${e.confidence ? escapeHTML(e.confidence)+'% confidence · ' : ''}${escapeHTML(e.timestamp)}</div>
+      <div style="font-size:.68rem;color:rgba(126,204,232,.4)">${escapeHTML(e.featureCount)} features</div>
+    </div>`;
+  }).join('');
+}
+
+function restoreEval(idx, modelName){
+  const hist = getEvalHistory(modelName);
+  const entry = hist[idx];
+  if(!entry || !entry.input) return;
+  // Restore input to raw textarea
+  const pairs = Object.entries(entry.input).map(([k,v])=>`${k}: ${v}`).join(', ');
+  document.getElementById('newData').value = pairs;
+  showToast('Previous input restored — hit Run Evaluation to re-run.', 'info', 3000);
+}
+
+// ============================================================
+// ORGANIZE YOUR DATA
+// ============================================================
+
+let orgFiles = [];
+let orgPlan = null;
+let orgFileSummaries = [];
+let orgPreExecutionReview = null;
+let orgFileId = null;
+let orgFileColumns = [];
+let orgResultRows = 0;
+
+function orgHandleDrop(e){
+  e.preventDefault();
+  document.getElementById('org-dropzone').style.borderColor = 'rgba(224,64,251,.3)';
+  const files = Array.from(e.dataTransfer.files);
+  orgAddFiles(files);
+}
+
+function orgHandleFiles(fileList){
+  orgAddFiles(Array.from(fileList));
+}
+
+function orgAddFiles(newFiles){
+  orgFiles = [...orgFiles, ...newFiles];
+  renderOrgFileList();
+  document.getElementById('org-analyze-btn').style.display = orgFiles.length > 0 ? 'block' : 'none';
+}
+
+function orgRemoveFile(idx){
+  orgFiles.splice(idx, 1);
+  renderOrgFileList();
+  document.getElementById('org-analyze-btn').style.display = orgFiles.length > 0 ? 'block' : 'none';
+}
+
+function renderOrgFileList(){
+  const list = document.getElementById('org-file-list');
+  if(!orgFiles.length){ list.innerHTML = ''; return; }
+  list.innerHTML = orgFiles.map((f, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;
+      background:rgba(0,8,25,.5);border:1px solid rgba(224,64,251,.15);border-radius:6px;font-size:.82rem">
+      <span style="color:var(--white)">📄 ${escapeHTML(f.name)}</span>
+      <span style="color:var(--muted);margin:0 .75rem">${escapeHTML((f.size/1024).toFixed(1))}KB</span>
+      <button onclick="orgRemoveFile(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;transition:color .2s"
+        onmouseover="this.style.color='var(--coral)'" onmouseout="this.style.color='var(--muted)'">✕</button>
+    </div>`).join('');
+}
+
+async function orgAnalyze(){
+  if(!orgFiles.length){ showToast('Please upload at least one file.', 'warning'); return; }
+
+  // Check usage limit
+  if(!checkOrgLimit()){
+    const limit = getOrgLimit();
+    showToast(`You've used all ${limit} Data Organization sessions on your plan. Upgrade for more.`, 'warning', 6000);
+    setTimeout(()=>{ showPanel('billing', null); showUpgradeModal('Pro'); }, 1500);
+    return;
+  }
+
+  const btn = document.getElementById('org-analyze-btn');
+  btn.disabled = true; btn.textContent = '⟳ Analyzing files…';
+
+  try{
+    const formData = new FormData();
+    orgFiles.forEach(f => formData.append('files', f));
+    const scopeInstructions = document.getElementById('orgScopeInstructions')?.value.trim() || '';
+    if(scopeInstructions) formData.append('scope_instructions', scopeInstructions);
+
+    const resp = await fetch(`${API_BASE}/organize/analyze`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: formData
+    });
+
+    if(!resp.ok){
+      const e = await resp.json();
+      throw new Error(e.detail || 'Analysis failed');
+    }
+
+    const data = await resp.json();
+    orgPlan = data.plan;
+    orgFileSummaries = data.file_summaries;
+    orgPreExecutionReview = data.pre_execution_review || null;
+
+    document.getElementById('org-blocked-card').style.display = 'none';
+    renderOrgPlan();
+    document.getElementById('org-plan-card').style.display = 'block';
+    document.getElementById('org-plan-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch(e){
+    showToast('Analysis failed: ' + e.message, 'error');
+  }
+
+  btn.disabled = false; btn.textContent = '✦ Analyze & Generate Merge Plan';
+}
+
+function renderOrgPlan(){
+  const plan = orgPlan;
+
+  // Assessment — short summary, no truncation needed
+  const assessment = plan.assessment || 'Files analyzed and ready to merge.';
+  const sentences = assessment.match(/[^.!?]+[.!?]+/g) || [assessment];
+  const shortText = sentences.slice(0, 2).join(' ').trim();
+
+  const confColor = plan.confidence === 'high' ? 'var(--emerald)' : plan.confidence === 'medium' ? 'var(--gold)' : 'var(--coral)';
+  const strategyLabel = ({
+    join:   'Join files on a shared column',
+    append: 'Stack all files into one table',
+    mixed:  'Combination of joining and stacking'
+  })[plan.merge_strategy] || plan.merge_strategy || 'Stack files into one table';
+
+  document.getElementById('org-assessment').innerHTML = `
+    <div style="font-size:1.05rem;line-height:1.75;color:var(--white);margin-bottom:1rem">
+      ${escapeHTML(shortText)}
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.92rem;color:var(--muted)">
+      <span>Strategy: <strong style="color:var(--white)">${escapeHTML(strategyLabel)}</strong></span>
+      ${plan.merge_key ? `<span>Join on: <strong style="color:var(--white)">${escapeHTML(plan.merge_key)}</strong></span>` : ''}
+      <span>Confidence: <strong style="color:${confColor}">${escapeHTML(plan.confidence || 'medium')}</strong></span>
+    </div>`;
+
+  // Group transformations by category
+  const trans = plan.transformations || [];
+  const transEl = document.getElementById('org-transformations');
+
+  if(!trans.length){
+    transEl.innerHTML = `<div style="font-size:1rem;color:var(--teal);padding:.75rem 0">
+      ✓ No changes needed — your files are already compatible.
+    </div>`;
+  } else {
+    // Tiny rotating rainbow-gradient sphere used as the bullet icon for every group
+    const SPHERE_ICON = `<svg width="20" height="20" viewBox="0 0 20 20" style="flex-shrink:0;animation:orgSphereSpin 4s linear infinite">
+      <defs>
+        <linearGradient id="orgSphereGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00d4ff"/>
+          <stop offset="25%" stop-color="#e040fb"/>
+          <stop offset="50%" stop-color="#ffd600"/>
+          <stop offset="75%" stop-color="#00c853"/>
+          <stop offset="100%" stop-color="#00d4ff"/>
+        </linearGradient>
+      </defs>
+      <circle cx="10" cy="10" r="8" fill="url(#orgSphereGrad)"/>
+      <circle cx="7.5" cy="7" r="2.5" fill="rgba(255,255,255,.35)"/>
+    </svg>`;
+
+    const LABELS = {
+      rename_column:     { label: 'Column renames',        desc: t => `Rename <strong>${escapeHTML(t.from||t.column||'')}</strong> → <strong>${escapeHTML(t.to||'')}</strong>${t.file?' in '+escapeHTML(t.file):''}` },
+      cast_type:         { label: 'Data type fixes',        desc: t => `Convert <strong>${escapeHTML(t.column||'')}</strong> to the right format${t.target_type?' ('+escapeHTML(t.target_type)+')':''}` },
+      standardize_dates: { label: 'Date standardization',   desc: t => `Standardize dates in <strong>${escapeHTML(t.column||'')}</strong> to YYYY-MM-DD` },
+      fill_nulls:        { label: 'Fill missing values',    desc: t => `Fill blank cells in <strong>${escapeHTML(t.column||'')}</strong>${t.strategy?' using '+escapeHTML(t.strategy):''}` },
+      deduplicate:       { label: 'Remove duplicates',      desc: t => `Remove duplicate rows${t.key_columns&&t.key_columns.length?' matched on '+escapeHTML(t.key_columns.join(', ')):''}` },
+      drop_column:       { label: 'Remove unused columns',  desc: t => `Drop <strong>${escapeHTML(t.column||'')}</strong>${t.file?' from '+escapeHTML(t.file):''} — not needed in the final dataset` },
+      extract_archive:   { label: 'Extract ZIP archive',    desc: t => escapeHTML(t.reason||'Unzip the uploaded archive to access the data files inside') },
+      detect_encoding:   { label: 'Fix file encoding',      desc: t => escapeHTML(t.reason||'Detect and fix the character encoding so the file can be read correctly') },
+      parse_delimited:   { label: 'Fix delimiter parsing',  desc: t => t.reason ? escapeHTML(t.reason) : `Re-parse <strong>${escapeHTML(t.file||t.column||'this file')}</strong> using the correct delimiter` },
+      standardize_text:  { label: 'Standardize text values', desc: t => `Normalize text in <strong>${escapeHTML(t.column||'')}</strong>${t.reason?' — '+escapeHTML(t.reason):''}` },
+    };
+
+    const groups = {};
+    trans.forEach(t => { const k = t.type||'other'; if(!groups[k]) groups[k]=[]; groups[k].push(t); });
+    const ORDER = ['extract_archive','detect_encoding','rename_column','cast_type','standardize_dates','fill_nulls','deduplicate','drop_column'];
+    const sortedKeys = [...ORDER.filter(k=>groups[k]), ...Object.keys(groups).filter(k=>!ORDER.includes(k))];
+
+    transEl.innerHTML = sortedKeys.map((key, gi) => {
+      const items = groups[key];
+      const meta  = LABELS[key] || { label: key.replace(/_/g,' ').replace(/\b\w/g, c=>c.toUpperCase()), desc: t => escapeHTML(t.reason||'') };
+      const groupId = `org-group-${gi}`;
+      // Dedupe identical description lines (e.g. when several transformations
+      // share the same generic reason text) — show each unique line once with
+      // a count if it applied more than once.
+      const descCounts = new Map();
+      items.forEach(t => {
+        const text = meta.desc(t);
+        descCounts.set(text, (descCounts.get(text) || 0) + 1);
+      });
+      const rows = Array.from(descCounts.entries()).map(([text, count]) => `
+        <div style="padding:.7rem 1rem;border-top:1px solid rgba(0,212,255,.07);font-size:.92rem;color:var(--white);line-height:1.55;display:flex;justify-content:space-between;gap:.75rem">
+          <span>${text}</span>
+          ${count > 1 ? `<span style="color:var(--muted);font-size:.82rem;flex-shrink:0;white-space:nowrap">×${count}</span>` : ''}
+        </div>`).join('');
+      return `<div style="background:rgba(0,8,25,.5);border:1px solid rgba(0,212,255,.12);border-radius:10px;overflow:hidden;margin-bottom:.625rem">
+        <button onclick="toggleOrgGroup('${groupId}')"
+          style="width:100%;display:flex;align-items:center;gap:.875rem;padding:.875rem 1rem;background:none;border:none;cursor:pointer;text-align:left;transition:background .15s"
+          onmouseover="this.style.background='rgba(0,212,255,.03)'" onmouseout="this.style.background='none'">
+          <span style="flex-shrink:0">${SPHERE_ICON}</span>
+          <span style="font-size:1rem;font-weight:600;color:var(--white);flex:1">${escapeHTML(meta.label)}</span>
+          <span style="font-size:.88rem;color:var(--muted);margin-right:.5rem">${items.length} step${items.length===1?'':'s'}</span>
+          <span id="${groupId}-chevron" style="color:var(--muted);font-size:.82rem;transition:transform .2s">▼</span>
+        </button>
+        <div id="${groupId}" style="display:none">${rows}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Warnings — collapsed by default
+  const warns = plan.warnings || [];
+  const warnEl = document.getElementById('org-warnings');
+  if(warns.length){
+    warnEl.style.display = 'block';
+    warnEl.innerHTML = `
+      <button onclick="toggleOrgWarnings()" style="width:100%;display:flex;align-items:center;gap:.75rem;background:none;border:none;cursor:pointer;text-align:left;padding:.1rem 0">
+        <span style="font-size:1rem;color:var(--gold)">⚠</span>
+        <span style="font-size:1rem;font-weight:600;color:var(--gold);flex:1">${warns.length} data quality note${warns.length===1?'':'s'}</span>
+        <span id="org-warn-chevron" style="color:var(--gold);font-size:.82rem">▼</span>
+      </button>
+      <div id="org-warn-body" style="display:none;flex-direction:column;gap:.5rem;margin-top:.875rem">
+        ${warns.map(w=>`<div style="font-size:.92rem;color:var(--muted);line-height:1.65;padding:.5rem 0;border-top:1px solid rgba(255,214,0,.1)">${escapeHTML(w)}</div>`).join('')}
+      </div>`;
+  } else {
+    warnEl.style.display = 'none';
+  }
+
+  // Risky-join confirmation panel — driven by pre_execution_review from the
+  // analyze response, computed from real data (not the plan's own text), so
+  // this reflects what the backend will actually enforce at execute time.
+  renderOrgRiskConfirm();
+}
+
+function renderOrgRiskConfirm(){
+  const review = orgPreExecutionReview;
+  const panel = document.getElementById('org-risk-confirm');
+  const checkbox = document.getElementById('org-risk-confirm-checkbox');
+  const needsConfirmation = !!(review && review.any_requires_confirmation);
+
+  if(!needsConfirmation){
+    panel.style.display = 'none';
+    if(checkbox) checkbox.checked = false;
+    return;
+  }
+
+  const riskySteps = (review.join_steps || []).filter(s => s.requires_confirmation);
+  document.getElementById('org-risk-confirm-body').innerHTML = riskySteps.map(s => {
+    const fromRows = (s.left_rows ?? 0).toLocaleString();
+    const toRows = (s.estimated_output_rows ?? s.output_rows ?? 0).toLocaleString();
+    const multiplier = s.row_multiplier ? `${s.row_multiplier}x` : '';
+    return `<div style="font-size:.92rem;color:var(--white);line-height:1.65;padding:.5rem 0;border-top:1px solid rgba(255,68,68,.15)">
+      Joining <strong>${escapeHTML(s.right_file || 'this file')}</strong> would take your dataset from
+      <strong>${fromRows}</strong> rows to approximately <strong>${toRows}</strong> rows ${multiplier ? `(${multiplier})` : ''} —
+      usually caused by duplicate keys in the lookup file.
+    </div>`;
+  }).join('');
+  panel.style.display = 'block';
+  if(checkbox) checkbox.checked = false;
+}
+
+function toggleOrgGroup(id){
+  const el=document.getElementById(id), chevron=document.getElementById(id+'-chevron');
+  if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(chevron) chevron.style.transform=open?'':'rotate(180deg)';
+}
+
+function toggleOrgWarnings(){
+  const el=document.getElementById('org-warn-body'), chevron=document.getElementById('org-warn-chevron');
+  if(!el) return;
+  const open=el.style.display==='flex';
+  el.style.display=open?'none':'flex';
+  if(chevron) chevron.style.transform=open?'':'rotate(180deg)';
+}
+
+async function orgExecute(){
+  // If the pre-execution review flagged a risky join, require the explicit
+  // checkbox before ever calling the API — this is the proactive path.
+  // orgExecute() still separately handles data.blocked below as a defensive
+  // fallback (e.g. if the risk was somehow missed here, or a DIFFERENT
+  // problem like a missing join key blocks execution instead).
+  const riskCheckbox = document.getElementById('org-risk-confirm-checkbox');
+  const riskPanelShown = document.getElementById('org-risk-confirm').style.display !== 'none';
+  if(riskPanelShown && riskCheckbox && !riskCheckbox.checked){
+    showToast('Please review and check the box above to confirm before continuing.', 'warning', 5000);
+    document.getElementById('org-risk-confirm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  const confirmRiskyOperations = !!(riskCheckbox && riskCheckbox.checked);
+
+  const btn = document.querySelector('#org-plan-card .btn-generate');
+  btn.disabled = true; btn.textContent = '⟳ Building dataset… this may take a moment';
+
+  try{
+    const resp = await fetch(`${API_BASE}/organize/execute`, {
+      method: 'POST',
+      headers: { ...await authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        plan: orgPlan,
+        file_summaries: orgFileSummaries,
+        session_key: 'organize',
+        confirm_risky_operations: confirmRiskyOperations
+      })
+    });
+
+    if(!resp.ok){
+      let message = `Execution failed (${resp.status})`;
+      try{
+        const e = await resp.json();
+        message = e.detail || message;
+      } catch(_){
+        // Backend returned a non-JSON error body (e.g. a raw 500 page) — fall back to status text
+        try{
+          const text = await resp.text();
+          if(text) message = text.slice(0, 200);
+        } catch(_){}
+      }
+      throw new Error(message);
+    }
+
+    const data = await resp.json();
+
+    // A blocked response is still HTTP 200 (resp.ok is true) — the backend
+    // deliberately did NOT raise an error status for this, since "blocked"
+    // is an expected, well-formed outcome, not a server failure. It must be
+    // checked explicitly, or a blocked run would render as if it succeeded.
+    if(data.blocked){
+      renderOrgBlocked(data);
+      document.getElementById('org-blocked-card').style.display = 'block';
+      document.getElementById('org-blocked-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      btn.disabled = false; btn.textContent = '◉ Execute Plan & Build Dataset';
+      return;
+    }
+
+    orgFileId = data.file_id;
+    orgFileColumns = data.columns || [];
+    orgResultRows = data.rows || 0;
+    incOrgUsage();
+    renderOrgUsageDisplay();
+    renderOrgResult(data);
+    document.getElementById('org-result-card').style.display = 'block';
+    document.getElementById('org-result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch(e){
+    showToast('Execution failed: ' + e.message, 'error');
+  }
+
+  btn.disabled = false; btn.textContent = '◉ Execute Plan & Build Dataset';
+}
+
+function renderOrgBlocked(data){
+  const blockers = data.blockers || [];
+  document.getElementById('org-blocked-body').innerHTML = blockers.map(b => `
+    <div style="padding:.9rem 1rem;background:rgba(255,68,68,.05);border:1px solid rgba(255,68,68,.15);border-radius:8px">
+      <div style="font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--coral);margin-bottom:.4rem">${escapeHTML((b.type || 'issue').replace(/_/g,' '))}</div>
+      <div style="font-size:.92rem;color:var(--white);line-height:1.65">${escapeHTML(b.message || 'This step could not be completed safely.')}</div>
+    </div>`).join('') || `<div style="font-size:.92rem;color:var(--white);line-height:1.65">${escapeHTML(data.message || 'The organizer stopped before finishing.')}</div>`;
+}
+
+let orgPreviewExpanded = false;
+function toggleOrgPreviewExpand(){
+  orgPreviewExpanded = !orgPreviewExpanded;
+  const wrap = document.getElementById('org-preview-wrap');
+  const btn = document.getElementById('org-preview-expand-btn');
+  if(orgPreviewExpanded){
+    wrap.style.maxHeight = '600px';
+    wrap.style.overflowY = 'auto';
+    btn.innerHTML = '⤡ Collapse';
+  } else {
+    wrap.style.maxHeight = '260px';
+    wrap.style.overflowY = 'hidden';
+    btn.innerHTML = '⤢ Expand';
+  }
+}
+
+function renderOrgResult(data){
+  // Stats
+  document.getElementById('org-stats').innerHTML = `
+    <div style="background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.875rem">
+      <div style="font-family:'Cinzel',serif;font-size:1.4rem;font-weight:700;color:var(--bright)">${data.rows.toLocaleString()}</div>
+      <div style="font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px">Rows</div>
+    </div>
+    <div style="background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.875rem">
+      <div style="font-family:'Cinzel',serif;font-size:1.4rem;font-weight:700;color:var(--magenta)">${data.cols}</div>
+      <div style="font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px">Columns</div>
+    </div>
+    <div style="background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.875rem">
+      <div style="font-family:'Cinzel',serif;font-size:1.4rem;font-weight:700;color:${data.verification?.verdict === 'pass' ? 'var(--emerald)' : 'var(--gold)'}">
+        ${data.verification?.verdict === 'pass' ? '✓ Pass' : data.verification?.verdict === 'pass_with_warnings' ? '⚡ Warnings' : '✗ Issues'}
+      </div>
+      <div style="font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px">Verification</div>
+    </div>`;
+
+  // Verification summary
+  const v = data.verification || {};
+  const vColor = v.verdict === 'pass' ? 'var(--emerald)' : v.verdict === 'pass_with_warnings' ? 'var(--gold)' : 'var(--coral)';
+  let vHtml = `<div style="color:${vColor};font-weight:600;margin-bottom:.6rem;font-size:1rem">Second-pass verification: ${escapeHTML(v.verdict || 'complete')}</div>`;
+  vHtml += `<div style="color:var(--muted);font-size:.95rem;line-height:1.65">${escapeHTML(v.summary || '')}</div>`;
+  if(v.issues && v.issues.length){
+    vHtml += `<div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.75rem">` +
+      v.issues.map(i => `<div style="color:var(--gold);font-size:.9rem;line-height:1.55;padding-top:.5rem;border-top:1px solid rgba(255,214,0,.1)">${escapeHTML(i)}</div>`).join('') +
+      `</div>`;
+  }
+  const vEl = document.getElementById('org-verification');
+  vEl.innerHTML = vHtml;
+  vEl.style.background = v.verdict === 'pass' ? 'rgba(0,200,83,.06)' : 'rgba(255,214,0,.06)';
+  vEl.style.border = `1px solid ${v.verdict === 'pass' ? 'rgba(0,200,83,.2)' : 'rgba(255,214,0,.2)'}`;
+  vEl.style.borderRadius = '10px';
+  vEl.style.padding = '1.1rem 1.25rem';
+
+  // Preview table
+  const preview = data.preview || [];
+  if(preview.length){
+    const cols = Object.keys(preview[0]);
+    let tableHtml = `<table style="border-collapse:collapse;font-size:.92rem">
+      <thead><tr>${cols.map(c => `<th style="padding:.65rem .9rem;text-align:left;color:var(--muted);border-bottom:1px solid rgba(0,212,255,.1);white-space:nowrap">${escapeHTML(c)}</th>`).join('')}</tr></thead>
+      <tbody>${preview.map((row, i) => `<tr style="background:${i%2===0?'transparent':'rgba(0,212,255,.03)'}">
+        ${cols.map(c => `<td style="padding:.65rem .9rem;color:var(--white);border-bottom:1px solid rgba(0,212,255,.05);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML(row[c] ?? '')}</td>`).join('')}
+      </tr>`).join('')}</tbody>
+    </table>`;
+    document.getElementById('org-preview').innerHTML = tableHtml;
+  }
+}
+
+async function orgDownload(){
+  try{
+    const resp = await fetch(`${API_BASE}/organize/download`, {
+      headers: await authHeaders()
+    });
+    if(!resp.ok){ showToast('Download failed.', 'error'); return; }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'organized_dataset.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e){
+    showToast('Download failed: ' + e.message, 'error');
+  }
+}
+
+async function orgDownloadReport(){
+  try{
+    const resp = await fetch(`${API_BASE}/organize/download-report`, {
+      headers: await authHeaders()
+    });
+    if(!resp.ok){ showToast('Report download failed.', 'error'); return; }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'organization_report.txt';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e){
+    showToast('Report download failed: ' + e.message, 'error');
+  }
+}
+
+function orgPopulateTrainFields(){
+  const sel = document.getElementById('targetColSel');
+  if(sel && orgFileColumns.length){
+    sel.innerHTML = '<option value="" disabled selected>— Select a target column —</option>' + orgFileColumns.map(c => optionHTML(c)).join('');
+  const rSel = document.getElementById('reportTargetSel');
+  if(rSel){ rSel.innerHTML = '<option value="">Exploratory — full dataset profile, no prediction target</option>' + orgFileColumns.map(c => optionHTML(c)).join(''); }
+  }
+  renderDatasetHealthPreview({
+    rows: orgResultRows,
+    cols: orgFileColumns.length,
+    columns: orgFileColumns,
+    task: 'organized',
+    algorithm: 'report-first workflow',
+    warnings: []
+  }, 'organized dataset');
+}
+
+function orgUseForModel(){
+  if(!orgFileId){ showToast('No dataset ready.', 'warning'); return; }
+  // Switch to train panel first (this resets currentFileId), then set it
+  showPanel('train', null);
+  currentFileId = orgFileId;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  // Show step 2 directly since file is already processed
+  document.getElementById('file-info').textContent = 'organized_dataset.csv — ready to train';
+  document.getElementById('file-info').style.display = 'block';
+  document.getElementById('step2-card').style.display = 'block';
+  orgPopulateTrainFields();
+  showToast('Dataset loaded — configure your model below!', 'success', 4000);
+}
+
+function orgUseForReport(){
+  if(!orgFileId){ showToast('No dataset ready.', 'warning'); return; }
+  // Switch to train panel first (this resets currentFileId), then set it
+  showPanel('train', null);
+  currentFileId = orgFileId;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('file-info').textContent = 'organized_dataset.csv — ready for report';
+  document.getElementById('file-info').style.display = 'block';
+  document.getElementById('step2-card').style.display = 'block';
+  document.getElementById('report-cta').style.display = 'block';
+  orgPopulateTrainFields();
+  // Auto-scroll to report section
+  setTimeout(() => {
+    document.getElementById('report-cta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 300);
+  showToast('Dataset loaded — generate your report below!', 'success', 4000);
+}
+
+function orgReset(){
+  orgFiles = [];
+  orgPlan = null;
+  orgFileSummaries = [];
+  orgPreExecutionReview = null;
+  orgFileId = null;
+  orgResultRows = 0;
+  document.getElementById('org-file-list').innerHTML = '';
+  document.getElementById('org-analyze-btn').style.display = 'none';
+  document.getElementById('org-plan-card').style.display = 'none';
+  document.getElementById('org-risk-confirm').style.display = 'none';
+  document.getElementById('org-blocked-card').style.display = 'none';
+  document.getElementById('org-result-card').style.display = 'none';
+  document.getElementById('orgFileInput').value = '';
+}
+
+// ── Report History ──
+const REPORT_HISTORY_KEY = 'archimedesmd_report_history_v1';
+
+function getReportHistory(){
+  try{ return JSON.parse(localStorage.getItem(REPORT_HISTORY_KEY) || '[]'); }
+  catch(_){ return []; }
+}
+
+function saveReportHistory(entry){
+  try{
+    const hist = getReportHistory();
+    hist.unshift(entry);
+    if(hist.length > 5) hist.pop();
+    localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(hist));
+    renderReportHistory();
+  } catch(_){}
+}
+
+function clearReportHistory(){
+  localStorage.removeItem(REPORT_HISTORY_KEY);
+  renderReportHistory();
+}
+
+function renderReportHistory(){
+  const hist = getReportHistory();
+  const card = document.getElementById('report-history-card');
+  const list = document.getElementById('report-history-list');
+  if(!card || !list) return;
+  if(!hist.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  list.innerHTML = hist.map((r, i) => `
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem .875rem;
+      background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.1);border-radius:8px;
+      font-size:.8rem;cursor:pointer;transition:all .2s"
+      onclick="reopenReport(${i})"
+      onmouseover="this.style.borderColor='rgba(0,212,255,.3)'"
+      onmouseout="this.style.borderColor='rgba(0,212,255,.1)'">
+      <div style="color:var(--magenta);font-size:1rem;flex-shrink:0">✦</div>
+      <div style="flex:1">
+        <div style="color:var(--white);font-weight:500">${escapeHTML(r.dataset_name || 'Report')}</div>
+        <div style="color:var(--muted);font-size:.72rem;margin-top:2px">${escapeHTML(r.rows?.toLocaleString() || '—')} rows · ${escapeHTML(r.cols || '—')} cols · ${escapeHTML(r.generated_at || '')}</div>
+      </div>
+      <div style="color:var(--muted);font-size:.75rem">↗ View</div>
+    </div>`).join('');
+}
+
+function reopenReport(idx){
+  const hist = getReportHistory();
+  const entry = hist[idx];
+  if(!entry){ showToast('Report no longer available — please regenerate.', 'warning'); return; }
+
+  // If the HTML was stored in the history entry, load it into sessionStorage
+  // and open the viewer — works even after a page reload.
+  if(entry.report_html){
+    try{
+      const payload = {
+        report_html: entry.report_html,
+        dataset_name: entry.dataset_name,
+        rows: entry.rows,
+        cols: entry.cols,
+        generated_at: entry.generated_at,
+      };
+      window.__amdPendingReportPayload = payload;
+      sessionStorage.setItem('amd_report_v1', JSON.stringify(payload));
+      window.open('/report.html', '_blank');
+      return;
+    } catch(_){}
+  }
+
+  // Fallback: check if this exact report is still in sessionStorage
+  try{
+    const current = JSON.parse(sessionStorage.getItem('amd_report_v1') || '{}');
+    if(current.dataset_name === entry.dataset_name && current.generated_at === entry.generated_at){
+      window.__amdPendingReportPayload = current;
+      window.open('/report.html', '_blank');
+      return;
+    }
+  } catch(_){}
+
+  showToast('Report not available — please re-upload your dataset and regenerate.', 'warning', 5000);
+}
+
+function checkRawCase(textarea){
+  const val = textarea.value;
+  const hasUppercase = /[A-Z]/.test(val.split(':')[0] || '');
+  document.getElementById('raw-case-warning').style.display = hasUppercase ? 'block' : 'none';
+}
+
+function toggleRawOutput(){
+  const wrap = document.getElementById('raw-output-wrap');
+  const icon = document.getElementById('raw-toggle-icon');
+  const show = wrap.style.display==='none';
+  wrap.style.display = show ? 'block' : 'none';
+  icon.textContent = show ? '▼' : '▶';
+}
+
+let lastEvalModel = null;
+let lastEvalInput = null;
+let lastEvalPrediction = null;
+
+async function submitFeedback(){
+  if(!lastEvalModel || !lastEvalInput){
+    showToast('Run a prediction first before submitting an outcome.', 'warning');
+    return;
+  }
+  const trueLabel = document.getElementById('feedback-true-label')?.value.trim();
+  if(!trueLabel){
+    showToast('Please enter the actual outcome before saving.', 'warning');
+    return;
+  }
+  const statusEl = document.getElementById('feedback-status');
+  statusEl.textContent = 'Saving…';
+  statusEl.style.display = 'block';
+  try{
+    const headers = await authHeaders();
+    headers['Content-Type'] = 'application/json';
+    const resp = await fetch(`${API_BASE}/model/${lastEvalModel.id}/feedback`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        input: lastEvalInput,
+        prediction: lastEvalPrediction || null,
+        true_label: trueLabel,
+      })
+    });
+    if(!resp.ok){
+      const err = await resp.json();
+      throw new Error(err.detail || 'Feedback submission failed');
+    }
+    const data = await resp.json();
+    statusEl.textContent = `Saved. ${data.ground_truth_count} actual outcome(s) stored.${data.retrain_ready ? ' Ready to retrain!' : ''}`;
+    statusEl.style.color = 'var(--emerald)';
+    document.getElementById('feedback-true-label').value = '';
+    if(data.retrain_ready){
+      showToast('10 outcomes saved — you can now retrain the model!', 'success', 5000);
+    } else {
+      showToast('Outcome saved.', 'success', 3000);
+    }
+  } catch(e){
+    statusEl.textContent = 'Error: ' + e.message;
+    statusEl.style.color = 'var(--coral)';
+  }
+}
+
+function buildPythonCode(model, inputDict){
+  return `import joblib, pandas as pd
+
+# Load trained model
+pkg     = joblib.load('${model.name}_model.pkl')
+model   = pkg['model']
+scaler  = pkg['scaler']
+imputer = pkg['imputer']
+
+# New data
+new_data = pd.DataFrame([${JSON.stringify(inputDict)}])
+X = imputer.transform(new_data[pkg['feature_names']])
+X = scaler.transform(X)
+
+# Predict
+prediction = model.predict(X)[0]
+confidence = model.predict_proba(X)[0].max() * 100
+print(f"Prediction: {prediction}, Confidence: {confidence:.1f}%")`;
+}
+
+function buildJsCode(model, inputDict){
+  // No model porting needed — this calls the same prediction API the
+  // dashboard itself uses, so it always stays in sync with the trained model.
+  return `// Calls the Archimedes MD prediction API directly — no local model file needed.
+// Replace YOUR_API_TOKEN with your account's access token.
+
+const response = await fetch('https://archimedesmd.com/api/predict/${model.id || model.name}', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(${JSON.stringify(inputDict, null, 2)})
+});
+
+const result = await response.json();
+console.log(\`Prediction: \${result.prediction}, Confidence: \${result.confidence}%\`);`;
+}
+
+function renderInferenceCode(){
+  if(!lastEvalModel) return;
+  const lang = document.getElementById('codeLangSel').value;
+  const code = lang === 'javascript'
+    ? buildJsCode(lastEvalModel, lastEvalInput)
+    : buildPythonCode(lastEvalModel, lastEvalInput);
+  document.getElementById('inferCode').textContent = code;
+}
+
+function downloadCode(){
+  if(!lastEvalModel) return;
+  const lang = document.getElementById('codeLangSel').value;
+  const isJs = lang === 'javascript';
+  const code = isJs ? buildJsCode(lastEvalModel, lastEvalInput) : buildPythonCode(lastEvalModel, lastEvalInput);
+  const ext = isJs ? 'js' : 'py';
+  const blob = new Blob([code], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${lastEvalModel.name}_inference.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('codeLangSel');
+  if(sel) sel.addEventListener('change', renderInferenceCode);
+});
+
+async function evaluateData(){
+  const models=getModels();
+  const idx=parseInt(document.getElementById('recallSel').value)||0;
+  const model=models[idx];
+
+  // Build input: collect all filled smart fields
+  const fieldInputs = document.querySelectorAll('.eval-field-input');
+  const smartPairs = [];
+  fieldInputs.forEach(inp=>{
+    if(inp.value.trim()) smartPairs.push(`${inp.dataset.feature}: ${inp.value.trim()}`);
+  });
+
+  const rawTA = document.getElementById('newData');
+
+  // Only use smart fields if they have MORE data than the raw textarea
+  // This prevents a single filled smart field overwriting a full raw paste
+  const rawCount = (rawTA.value.match(/:/g) || []).length;
+  if(smartPairs.length > rawCount){
+    rawTA.value = smartPairs.join(', ');
+  }
+
+  const newData=document.getElementById('newData').value.trim();
+  if(!newData){ showToast('Enter at least one feature value to evaluate.','warning'); return; }
+  if(!model){ showToast('No model selected.','warning'); return; }
+  if(!model.id){ showToast('Please retrain this model first.','warning'); return; }
+  const btn=document.getElementById('evalBtn');
+  btn.disabled=true;
+  const out=document.getElementById('evalOutput');
+  out.classList.add('show');
+  document.getElementById('evalStream').textContent='Running prediction...';
+  document.getElementById('inferCode').textContent='';
+  const inputDict={};
+  // Support both comma-separated and newline-separated input
+  // Normalize keys to lowercase to match model feature names
+  const pairs = newData.split(/[,\n]+/);
+  pairs.forEach(pair=>{
+    const i=pair.indexOf(':');
+    if(i<0) return;
+    const key=pair.slice(0,i).trim().toLowerCase();
+    const raw=pair.slice(i+1).trim();
+    if(!key || raw==='') return;
+    const num=parseFloat(raw);
+    inputDict[key] = isNaN(num) ? raw : num;
+  });
+  try{
+    const resp=await fetch(API_BASE+'/predict/'+model.id,{
+      method:'POST',
+      headers: await authHeaders({'Content-Type':'application/json'}),
+      body:JSON.stringify(inputDict)
+    });
+    if(!resp.ok){ const e=await resp.json(); throw new Error(e.detail||'Prediction failed'); }
+    const result=await resp.json();
+    let evalText='';
+    evalText+='PREDICTION: '+result.prediction+'\n';
+    if(result.confidence) evalText+='CONFIDENCE: '+result.confidence+'%\n';
+    if(result.probabilities){
+      evalText+='\nPROBABILITIES:\n';
+      Object.entries(result.probabilities).forEach(([k,v])=>{ evalText+='  Class '+k+': '+v+'%\n'; });
+    }
+    evalText+='\n---\n';
+    evalText+='Model: '+model.name+' ('+model.algo+')\n';
+    evalText+='Accuracy: '+model.accuracy+'\n';
+    evalText+='Trained on: '+(model.metrics&&model.metrics.train_samples?model.metrics.train_samples.toLocaleString():'unknown')+' samples';
+    document.getElementById('evalStream').textContent=evalText;
+
+    // Show prediction badge
+    const badge = document.getElementById('pred-badge');
+    const confidence = document.getElementById('pred-confidence');
+    const badgeWrap = document.getElementById('pred-badge-wrap');
+    if(result.prediction !== undefined){
+      const pred = result.prediction;
+      badge.textContent = String(pred).toUpperCase();
+      badge.style.background = 'linear-gradient(135deg,rgba(0,212,255,.12),rgba(124,77,255,.1))';
+      badge.style.border = '1px solid rgba(0,212,255,.35)';
+      badge.style.color = 'var(--bright)';
+      if(result.confidence){
+        confidence.textContent = `${result.confidence}% confidence`;
+      }
+      badgeWrap.style.display='block';
+    }
+
+    generateHumanSummary(model, result, inputDict);
+    lastEvalModel = model;
+    lastEvalInput = inputDict;
+    lastEvalPrediction = result;
+    renderInferenceCode();
+    document.getElementById('downloadScriptBtn').style.display = 'block';
+    // Show "Submit actual outcome" section so users can log ground truth
+    const feedbackSection = document.getElementById('feedback-section');
+    if(feedbackSection){
+      feedbackSection.style.display = 'block';
+      document.getElementById('feedback-true-label').value = '';
+      document.getElementById('feedback-status').style.display = 'none';
+    }
+    if(model.metrics && model.metrics.feature_importance){
+      renderFeatureImportance(model.metrics.feature_importance, 'eval-fi');
+    }
+    incEvals();
+    models[idx].bufferCount=(models[idx].bufferCount||0)+1;
+    setModels(models);
+
+    // Save to evaluation history
+    saveEvalHistory(model.name, {
+      prediction: result.prediction ?? result.cluster,
+      confidence: result.confidence || null,
+      input: inputDict,
+      featureCount: Object.keys(inputDict).length,
+      timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+    renderEvalHistory(model.name);
+  }catch(err){
+    document.getElementById('evalStream').textContent='Error: '+err.message;
+  }
+  btn.disabled=false;
+}
+
+async function generateHumanSummary(model, result, inputData){
+  const summaryBox = document.getElementById('humanSummary');
+  if(summaryBox) summaryBox.textContent = 'Generating summary...';
+  try{
+    const resp = await fetch('/api/summarize',{
+      method:'POST',
+      headers: await authHeaders({'Content-Type':'application/json'}),
+      body:JSON.stringify({
+        model_name: model.name,
+        algo: model.algo,
+        domain: model.domain,
+        target_col: model.targetCol || 'outcome',
+        result: result,
+        input_data: inputData
+      })
+    });
+    const data = await resp.json();
+    if(summaryBox){
+      let text = data.summary || 'Could not generate summary.';
+      summaryBox.textContent = text.replace(/\*\*/g, '');
+    }
+  }catch(err){
+    if(summaryBox) summaryBox.textContent = 'Could not generate summary.';
+  }
+}
+
+// ── DATA INTELLIGENCE REPORT ──
+function openPromptHelper(){
+  if(!currentFileId){
+    showToast('Upload a dataset first so we can tailor the prompt to your columns.', 'warning');
+    return;
+  }
+  let modal = document.getElementById('prompt-helper-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'prompt-helper-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:rgba(6,14,31,.97);border:1px solid rgba(0,212,255,.25);border-radius:20px;padding:2rem;width:90%;max-width:480px">
+      <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:3px;text-transform:uppercase;color:var(--bright);margin-bottom:.5rem">✦ Report Focus Helper</div>
+      <div style="font-size:.95rem;font-weight:600;color:var(--white);margin-bottom:.35rem">Help me focus the report</div>
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:1.25rem">Answer a few quick questions and Archimedes will write a clear report instruction for you.</div>
+
+      <label style="font-size:.75rem;color:var(--bright);display:block;margin-bottom:.3rem">What is this dataset about?</label>
+      <input type="text" id="ph-q1" placeholder="Example: E-commerce orders for a craft supply business, 2022–2024" style="margin-bottom:1rem">
+
+      <label style="font-size:.75rem;color:var(--bright);display:block;margin-bottom:.3rem">What decision or question are you trying to answer?</label>
+      <input type="text" id="ph-q2" placeholder="Example: Which products and channels are driving the most stockouts?">
+      <div style="font-size:.68rem;color:var(--muted);margin-bottom:1rem">Be specific. The more precise this is, the more useful the report will be.</div>
+
+      <label style="font-size:.75rem;color:var(--bright);display:block;margin-bottom:.3rem">Anything to exclude or deprioritize? (optional)</label>
+      <input type="text" id="ph-q3" placeholder="Example: Ignore Amazon orders and focus only on Shopify" style="margin-bottom:1.5rem">
+
+      <div style="display:flex;gap:.75rem">
+        <button id="ph-generate" onclick="buildReportPrompt()" style="flex:1;padding:.85rem;border-radius:8px;background:linear-gradient(135deg,var(--bright),var(--violet));color:var(--white);border:none;font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">
+          Generate prompt
+        </button>
+        <button onclick="document.getElementById('prompt-helper-modal').style.display='none'" style="padding:.85rem 1.25rem;border-radius:8px;background:transparent;color:var(--muted);border:1px solid rgba(0,212,255,.2);font-family:'Outfit',sans-serif;font-size:.88rem;cursor:pointer">
+          Cancel
+        </button>
+      </div>
+    </div>`;
+  modal.style.display = 'flex';
+}
+
+async function buildReportPrompt(){
+  const q1 = document.getElementById('ph-q1')?.value.trim();
+  const q2 = document.getElementById('ph-q2')?.value.trim();
+  const q3 = document.getElementById('ph-q3')?.value.trim();
+
+  if(!q2){ showToast('Please describe the question you want answered.', 'warning'); return; }
+
+  const btn = document.getElementById('ph-generate');
+  btn.disabled = true;
+  btn.textContent = 'Building prompt…';
+
+  // Get column names from the current analysis
+  const cols = currentAnalysis?.columns?.slice(0, 30) || [];
+  const colList = cols.length ? `Available columns: ${cols.join(', ')}` : '';
+
+  const userMessage = `You are helping a user write a focused steering prompt for a data intelligence report.
+
+${q1 ? `Dataset description: ${q1}` : ''}
+${colList}
+Main question to answer: ${q2}
+${q3 ? `Exclude or deprioritize: ${q3}` : ''}
+
+Write a concise, specific steering prompt (2-4 sentences) the user can paste into their report generator. It should tell the AI analyst exactly what to focus on, which columns matter most, and what the user is trying to decide. Do not include preamble — just the prompt itself.`;
+
+  try{
+    const headers = await authHeaders();
+    headers['Content-Type'] = 'application/json';
+    const resp = await fetch(`${API_BASE}/build-prompt`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ q1, q2, q3, columns: cols, file_id: currentFileId || '' })
+    });
+    const data = await resp.json();
+    const prompt = data?.prompt?.trim();
+    if(prompt){
+      document.getElementById('reportContext').value = prompt;
+      document.getElementById('prompt-helper-modal').style.display = 'none';
+      showToast('Prompt added — review it and adjust before generating.', 'success', 4000);
+    } else {
+      showToast('Could not generate prompt — try again.', 'error');
+    }
+  } catch(e){
+    showToast('Error generating prompt: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate prompt';
+  }
+}
+
+async function generateDataReport(){
+  if(!currentFileId){ showToast('Please upload a dataset first.','warning'); return; }
+
+  const context = document.getElementById('reportContext')?.value.trim() || '';
+  const targetCol = document.getElementById('reportTargetSel')?.value || '';
+
+  // Step 1: Ask the AI if any columns need clarification before generating.
+  // This is a lightweight call (~1s). If it fails for any reason, proceed
+  // silently — clarification is a nice-to-have, not a blocker.
+  let questions = [];
+  try {
+    const clarifyParams = new URLSearchParams({ file_id: currentFileId });
+    if(targetCol) clarifyParams.set('target_col', targetCol);
+    const clarifyResp = await fetch(`${API_BASE}/clarify?${clarifyParams}`, {
+      headers: await authHeaders()
+    });
+    if(clarifyResp.ok){
+      const clarifyData = await clarifyResp.json();
+      questions = clarifyData.questions || [];
+    }
+  } catch(_){}
+
+  // Step 2: If the AI returned questions, show the modal and wait for the
+  // user to answer or skip. Either way, _runReportGeneration() gets called
+  // with the combined context (original + answers, or just original if skipped).
+  if(questions.length > 0){
+    showClarifyModal(questions, context, targetCol);
+    return;
+  }
+
+  // No questions needed — proceed immediately.
+  _runReportGeneration(context, targetCol);
+}
+
+function showClarifyModal(questions, existingContext, targetCol){
+  // Build the modal HTML
+  const questionFields = questions.map((q, i) => `
+    <div style="margin-bottom:1.25rem">
+      <label style="display:block;font-size:.82rem;color:var(--bright);margin-bottom:.4rem;font-weight:600">${escapeHTML(q.question)}</label>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">Column: ${escapeHTML(q.column)}</div>
+      <input type="text" id="clarify-answer-${i}"
+        placeholder="Your answer (or leave blank to skip)"
+        style="width:100%;background:rgba(0,10,30,.7);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:.7rem 1rem;color:var(--white);font-family:'Outfit',sans-serif;font-size:.88rem;outline:none">
+    </div>
+  `).join('');
+
+  let modal = document.getElementById('clarify-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'clarify-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div style="background:rgba(6,14,31,.97);border:1px solid rgba(0,212,255,.25);border-radius:20px;padding:2rem;width:90%;max-width:500px;max-height:88vh;overflow-y:auto">
+      <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:3px;text-transform:uppercase;color:var(--bright);margin-bottom:.5rem">Before We Generate</div>
+      <div style="font-size:1rem;font-weight:600;color:var(--white);margin-bottom:.35rem">A few quick questions</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:1.5rem">Your answers will make the report more accurate. Skip any you're not sure about.</div>
+      ${questionFields}
+      <div style="display:flex;gap:.75rem;margin-top:1.5rem">
+        <button id="clarify-submit-btn"
+          style="flex:1;padding:.85rem;border-radius:8px;background:linear-gradient(135deg,var(--bright),var(--sky),var(--violet));color:var(--white);border:none;font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">
+          Submit &amp; Generate Report
+        </button>
+        <button id="clarify-skip-btn"
+          style="padding:.85rem 1.25rem;border-radius:8px;background:transparent;color:var(--muted);border:1px solid rgba(0,212,255,.2);font-family:'Outfit',sans-serif;font-size:.88rem;cursor:pointer">
+          Skip
+        </button>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+  document.getElementById('clarify-submit-btn')?.addEventListener('click', () => {
+    submitClarifyAnswers(questions.length, existingContext, targetCol);
+  });
+  document.getElementById('clarify-skip-btn')?.addEventListener('click', () => {
+    skipClarifyModal(existingContext, targetCol);
+  });
+}
+
+function closeClarifyModal(){
+  const modal = document.getElementById('clarify-modal');
+  if(modal) modal.style.display = 'none';
+}
+
+function submitClarifyAnswers(count, existingContext, targetCol){
+  const answers = [];
+  for(let i = 0; i < count; i++){
+    const val = document.getElementById(`clarify-answer-${i}`)?.value.trim();
+    if(val) answers.push(val);
+  }
+  const answerBlock = answers.length > 0
+    ? `\n\nUser clarifications about this dataset: ${answers.join(' | ')}`
+    : '';
+  closeClarifyModal();
+  _runReportGeneration(existingContext + answerBlock, targetCol);
+}
+
+function skipClarifyModal(existingContext, targetCol){
+  closeClarifyModal();
+  _runReportGeneration(existingContext, targetCol);
+}
+
+async function _runReportGeneration(context, targetCol){
+  const btn = document.getElementById('reportBtn');
+  const loading = document.getElementById('report-loading');
+
+  // Bigger datasets take noticeably longer — set expectations accordingly
+  const rowCount = currentAnalysis?.rows || 0;
+  const colCount = currentAnalysis?.cols || orgFileColumns.length || 0;
+  const isLarge = rowCount > 5000 || colCount > 20;
+  const initialLoadingText = isLarge
+    ? 'Large dataset detected'
+    : 'Preparing report';
+  const initialLoadingSub = isLarge
+    ? 'Computing statistics, sampling safely, and keeping the stream open while the report is written.'
+    : 'Reading columns, computing statistics, and preparing the first report sections.';
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+  setReportStatus(loading, initialLoadingText, initialLoadingSub);
+  loading.style.display = 'flex';
+
+  try{
+    setReportStatus(loading, 'Connecting to report engine', 'Starting the streamed report so the page does not time out.');
+    const params = new URLSearchParams({
+      file_id: currentFileId,
+      ...(targetCol && { target_col: targetCol }),
+      ...(context && { dataset_context: context })
+    });
+
+    // Use streaming to handle large datasets and bypass Railway 30s timeout
+    const headers = await authHeaders();
+    const streamUrl = `${API_BASE}/analyze-report-stream?${params.toString()}`;
+
+    const streamResp = await fetch(streamUrl, {
+      method: 'GET',
+      headers: headers
+    });
+
+    if(!streamResp.ok){
+      let errMsg = 'Report generation failed';
+      try{ const e = await streamResp.clone().json(); errMsg = e.detail || e.message || errMsg; }
+      catch(_){ const t = await streamResp.text(); errMsg = t.slice(0,200) || errMsg; }
+      throw new Error(errMsg);
+    }
+
+    // Read the SSE stream
+    const reader = streamResp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    const htmlChunks = [];
+    let rowsAnalyzed = 0;
+    let colsAnalyzed = 0;
+    let charCount = 0;
+    let reportStatus = 'complete';
+
+    while(true){
+      const { done, value } = await reader.read();
+      if(done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for(const line of lines){
+        if(!line.startsWith('data: ')) continue;
+        try{
+          const event = JSON.parse(line.slice(6));
+          if(event.type === 'progress'){
+            // Progress heartbeat — shows generation is active but never renders
+            // raw unaudited HTML. The audited report arrives as final_html.
+            charCount = event.chars || charCount;
+            if(charCount < 12000){
+              setReportStatus(loading, 'Writing executive summary', `${charCount.toLocaleString()} characters generated`);
+            } else if(charCount < 32000){
+              setReportStatus(loading, 'Building statistical analysis', `${charCount.toLocaleString()} characters generated`);
+            } else {
+              setReportStatus(loading, 'Running quality audit', `${charCount.toLocaleString()} characters — checking for errors`);
+            }
+          } else if(event.type === 'final_html'){
+            // The audited, patched HTML — this is the only version we render.
+            htmlChunks.length = 0;
+            htmlChunks.push(event.html);
+            rowsAnalyzed = event.rows_analyzed;
+            colsAnalyzed = event.cols_analyzed;
+            reportStatus = event.report_status || 'complete';
+          } else if(event.type === 'audit'){
+            // Audit patch log — for debugging only, not shown to user
+            const applied = event.applied || [];
+            const skipped = event.skipped || [];
+            if(applied.length || skipped.length){
+              console.info('[Archimedes audit] applied:', applied.length, 'skipped:', skipped.length, {applied, skipped});
+              setReportStatus(loading, 'Quality check complete', `${applied.length} fix(es) applied`);
+            }
+          } else if(event.type === 'error'){
+            throw new Error(event.message);
+          }
+        } catch(parseErr){
+          if(parseErr.message && !parseErr.message.includes('JSON')) throw parseErr;
+        }
+      }
+    }
+
+    const html = htmlChunks.join('');
+    if(!html){ throw new Error('Report not received — the quality audit may have timed out. Please try again.'); }
+    setReportStatus(loading, 'Finalizing report', 'Saving the report and opening the report view.');
+
+    if(reportStatus === 'partial_timeout'){
+      showToast('This report was partially completed because generation took too long. You can retry without using another report credit.', 'warning', 8000);
+    }
+
+    const fileName = document.getElementById('fileInput')?.files?.[0]?.name || 'Dataset';
+    const payload = {
+      report_html:    html,
+      dataset_name:   fileName.replace(/\.[^/.]+$/, ''),
+      rows:           rowsAnalyzed,
+      cols:           colsAnalyzed,
+      generated_at:   new Date().toLocaleString(),
+      plan:           (document.querySelector('.user-plan')?.textContent || 'free').toLowerCase(),
+      report_status:  reportStatus,
+    };
+
+    // Always set on window so the new tab can read via window.opener,
+    // since sessionStorage is per-tab and won't cross to a newly opened tab.
+    window.__amdPendingReportPayload = payload;
+
+    let storedReportInSession = true;
+    try{
+      sessionStorage.setItem('amd_report_v1', JSON.stringify(payload));
+    } catch(e){
+      storedReportInSession = false;
+    }
+
+    // Save to report history — store HTML inline so it survives page reloads
+    // sessionStorage clears on reload; localStorage persists across sessions.
+    // Cap at 1.5MB per entry to stay within localStorage limits.
+    const MAX_HISTORY_HTML = 1.5 * 1024 * 1024;
+    const histEntry = {
+      dataset_name: payload.dataset_name,
+      rows: payload.rows,
+      cols: payload.cols,
+      generated_at: payload.generated_at,
+      report_status: payload.report_status,
+    };
+    if(new Blob([payload.report_html || '']).size <= MAX_HISTORY_HTML){
+      histEntry.report_html = payload.report_html;
+    }
+    saveReportHistory(histEntry);
+
+    const tab = window.open('/report.html', '_blank');
+
+    if(!tab){
+      if(storedReportInSession){
+        showToast('Popup blocked — opening in this tab instead.', 'warning', 4000);
+        window.location.href = '/report.html';
+      } else {
+        showToast('Report is too large for browser storage. Use Download HTML from this session after reducing report size, or regenerate with a narrower focus.', 'warning', 7000);
+      }
+    } else {
+      showToast(`Report ready — ${rowsAnalyzed?.toLocaleString()} rows analyzed.`, 'success', 4000);
+    }
+
+  } catch(err){
+    showToast('Report failed: ' + err.message, 'error', 5000);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✦ Generate Data Intelligence Report';
+  loading.style.display = 'none';
+}
+
+// ── SUPPORT CHAT ──
+let chatHistory = [];
+let chatOpen = false;
+
+function toggleChat(){
+  chatOpen = !chatOpen;
+  document.getElementById('chat-bubble').classList.toggle('open', chatOpen);
+  if(chatOpen){
+    document.getElementById('chat-text-input').focus();
+    scrollChatToBottom();
+  }
+}
+
+function scrollChatToBottom(){
+  const msgs = document.getElementById('chat-messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function chatChip(el){
+  const text = el.textContent;
+  el.closest('.chat-suggested')?.remove();
+  document.getElementById('chat-text-input').value = text;
+  sendChatMessage();
+}
+
+function appendChatMsg(role, text){
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.textContent = text;
+  msgs.appendChild(div);
+  scrollChatToBottom();
+  return div;
+}
+
+async function sendChatMessage(){
+  const input = document.getElementById('chat-text-input');
+  const sendBtn = document.getElementById('chat-send-btn');
+  const text = input.value.trim();
+  if(!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  appendChatMsg('user', text);
+
+  const typing = appendChatMsg('bot typing', '…');
+
+  try{
+    const resp = await fetch(API_BASE + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: chatHistory })
+    });
+    if(!resp.ok){ const e = await resp.json(); throw new Error(e.detail || 'Chat failed'); }
+    const data = await resp.json();
+    const reply = data.reply || 'Sorry, I could not get a response.';
+
+    typing.className = 'chat-msg bot';
+    typing.textContent = reply;
+    scrollChatToBottom();
+
+    chatHistory.push({ role: 'user', content: text });
+    chatHistory.push({ role: 'assistant', content: reply });
+    if(chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+
+  }catch(err){
+    typing.className = 'chat-msg bot';
+    typing.textContent = 'Sorry, I had trouble connecting. Try again in a moment.';
+    scrollChatToBottom();
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+// ── Custom dropdown component ──────────────────────────────────────────────
+// Wraps a native <select> with a fully styled custom dropdown.
+// The native element stays hidden so all existing innerHTML/value code works.
+// A MutationObserver keeps the custom UI in sync when options change
+// programmatically (e.g. when the algorithm list updates after task change).
+
+const _customSelects = {};
+
+function initCustomSelect(selectId) {
+  const native = document.getElementById(selectId);
+  if(!native || native.dataset.cdInit) return;
+  native.dataset.cdInit = '1';
+  native.style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'cd-wrap';
+  native.parentNode.insertBefore(wrap, native);
+
+  const trigger = document.createElement('div');
+  trigger.className = 'cd-trigger';
+  trigger.setAttribute('tabindex', '0');
+  trigger.setAttribute('role', 'combobox');
+  trigger.setAttribute('aria-haspopup', 'listbox');
+
+  const list = document.createElement('div');
+  list.className = 'cd-list';
+  list.setAttribute('role', 'listbox');
+
+  wrap.appendChild(trigger);
+  wrap.appendChild(list);
+
+  function syncFromNative() {
+    list.innerHTML = '';
+    const opts = Array.from(native.options);
+    opts.forEach((opt, i) => {
+      const item = document.createElement('div');
+      item.className = 'cd-option' +
+        (opt.disabled ? ' disabled' : '') +
+        (i === native.selectedIndex ? ' selected' : '');
+      item.textContent = opt.text;
+      item.dataset.value = opt.value;
+      if(!opt.disabled) {
+        item.addEventListener('click', () => {
+          native.value = opt.value;
+          native.selectedIndex = i;
+          native.dispatchEvent(new Event('change', {bubbles:true}));
+          closeList();
+          syncFromNative();
+        });
+      }
+      list.appendChild(item);
+    });
+    const sel = native.options[native.selectedIndex];
+    trigger.innerHTML = '';
+    const label = document.createElement('span');
+    label.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1';
+    label.style.color = (sel && sel.disabled) ? 'rgba(126,204,232,.4)' : 'var(--white)';
+    label.textContent = sel ? sel.text : '';
+    const arrow = document.createElement('span');
+    arrow.className = 'cd-arrow';
+    arrow.innerHTML = '&#9660;';
+    trigger.appendChild(label);
+    trigger.appendChild(arrow);
+  }
+
+  function openList() {
+    trigger.classList.add('open');
+    list.classList.add('open');
+    trigger.setAttribute('aria-expanded','true');
+  }
+  function closeList() {
+    trigger.classList.remove('open');
+    list.classList.remove('open');
+    trigger.setAttribute('aria-expanded','false');
+  }
+
+  trigger.addEventListener('click', () => {
+    const isOpen = list.classList.contains('open');
+    // Close all other custom selects first
+    Object.values(_customSelects).forEach(cs => cs.close());
+    if(!isOpen) openList();
+  });
+  trigger.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
+    if(e.key === 'Escape') closeList();
+  });
+  document.addEventListener('click', e => {
+    if(!wrap.contains(e.target)) closeList();
+  }, true);
+
+  // Keep in sync when options are changed programmatically via innerHTML
+  const observer = new MutationObserver(syncFromNative);
+  observer.observe(native, {childList: true, subtree: true, attributes: true});
+  native.addEventListener('change', syncFromNative);
+
+  syncFromNative();
+  _customSelects[selectId] = { close: closeList, sync: syncFromNative };
+}
+
+// Init after DOM is ready — after DOMContentLoaded fires the selects exist
+// but may be empty; the observer handles population that happens later.
+document.addEventListener('DOMContentLoaded', () => {
+  ['reportTargetSel','targetColSel','taskSel','algoSel','recallSel','codeLangSel']
+    .forEach(initCustomSelect);
+});
+</script>
+
+<!-- UPGRADE MODAL -->
+<div id="upgradeModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:rgba(6,14,31,.97);border:1px solid rgba(0,212,255,.25);border-radius:20px;padding:2.5rem;width:90%;max-width:440px;position:relative">
+    <button onclick="closeUpgradeModal()" style="position:absolute;top:1rem;right:1.25rem;background:none;border:none;color:var(--muted);font-size:1.25rem;cursor:pointer">✕</button>
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:3px;text-transform:uppercase;background:linear-gradient(90deg,var(--bright),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem">Upgrade Plan</div>
+    <div style="font-size:1.2rem;font-weight:600;color:var(--white);margin-bottom:.25rem" id="modalPlanName"></div>
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:1.5rem">Enter your email and we'll be in touch within 24 hours to get you set up.</div>
+    <label style="font-size:.72rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.4rem;display:block">Your email</label>
+    <input type="email" id="upgradeEmail" placeholder="you@example.com"
+      style="width:100%;background:rgba(0,10,30,.7);border:1px solid rgba(0,212,255,.25);border-radius:8px;padding:.8rem 1rem;color:var(--white);font-family:'Outfit',sans-serif;font-size:.9rem;outline:none;margin-bottom:1rem">
+    <label style="font-size:.72rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.4rem;display:block">Any questions or notes? (optional)</label>
+    <textarea id="upgradeNote" placeholder="e.g. I need to train models on medical records for 3 hospitals..."
+      style="width:100%;background:rgba(0,10,30,.7);border:1px solid rgba(0,212,255,.25);border-radius:8px;padding:.8rem 1rem;color:var(--white);font-family:'Outfit',sans-serif;font-size:.85rem;outline:none;min-height:80px;resize:vertical;margin-bottom:1.25rem"></textarea>
+    <button onclick="submitUpgrade()" style="width:100%;padding:.9rem;border-radius:8px;background:linear-gradient(135deg,var(--bright),var(--violet));color:var(--white);border:none;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;letter-spacing:1px">
+      Request Upgrade
+    </button>
+    <div id="upgradeSuccess" style="display:none;margin-top:1rem;padding:.75rem;background:rgba(0,200,83,.08);border:1px solid rgba(0,200,83,.2);border-radius:8px;font-size:.82rem;color:var(--emerald);text-align:center">
+      ✓ Request received! We'll be in touch within 24 hours.
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedPlan = '';
+async function showUpgradeModal(plan){
+  // Go straight to Stripe checkout instead of email modal
+  const planKey = plan.toLowerCase();
+  try{
+    const { data:{ session } } = await sbClient.auth.getSession();
+    if(!session){ window.location.href = '/login.html'; return; }
+    showToast('Redirecting to checkout…', 'info', 3000);
+    const resp = await fetch(`/api/create-checkout-session?plan=${planKey}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+    const data = await resp.json();
+    if(data.checkout_url){
+      window.location.href = data.checkout_url;
+    } else {
+      showToast(data.detail || 'Could not start checkout. Please try again.', 'error');
+    }
+  } catch(e){
+    showToast('Checkout failed. Please try again.', 'error');
+  }
+}
+function closeUpgradeModal(){
+  document.getElementById('upgradeModal').style.display = 'none';
+}
+function submitUpgrade(){
+  const email = document.getElementById('upgradeEmail').value.trim();
+  if(!email || !email.includes('@')){ showToast('Please enter a valid email.','warning'); return; }
+  const note = document.getElementById('upgradeNote').value.trim();
+  window.location.href = `mailto:hello@archimedesmd.com?subject=Upgrade Request: ${selectedPlan} Plan&body=Email: ${email}%0D%0APlan: ${selectedPlan}%0D%0ANotes: ${note}`;
+  document.getElementById('upgradeSuccess').style.display = 'block';
+}
+</script>
+</body>
+</html>
