@@ -2540,7 +2540,7 @@ def _build_steering_block(dataset_context: Optional[str], stats: Optional[dict] 
         if not _ID_NAME_PATTERN.search(str(col))
     ][:12]
 
-    # Directive "X drivers" framing instead of a bare column-name list — cheap
+    # Directive "X segment patterns" framing instead of a bare column-name list — cheap
     # to derive deterministically from the same columns already extracted
     # for METRICS TO PRIORITIZE, no second API call needed to get this. A
     # dedicated stockout/lost-revenue line is added only when those specific
@@ -2553,7 +2553,7 @@ def _build_steering_block(dataset_context: Optional[str], stats: Optional[dict] 
     # which is exactly the failure mode this is guarding against. If such a
     # column exists, a plain caveat bullet replaces it instead.
     has_time_like_column = any(_TIME_LIKE_NAME_PATTERN.search(str(c)) for c in categorical_cols)
-    segment_lines = [f"- {c} drivers" for c in categorical_cols if not _TIME_LIKE_NAME_PATTERN.search(str(c))]
+    segment_lines = [f"- {c} segment patterns" for c in categorical_cols if not _TIME_LIKE_NAME_PATTERN.search(str(c))]
     if "stockout_flag" in all_columns or "lost_revenue_estimate" in all_columns:
         segment_lines.append("- Stockout/lost revenue problem areas")
     if has_time_like_column:
