@@ -2574,6 +2574,15 @@ def _build_steering_block(dataset_context: Optional[str], stats: Optional[dict] 
         "\n- For stockout_flag specifically, cite only the precomputed segment rates provided in "
         "the statistics. Do not infer or calculate a stockout rate for any segment not included."
     ) if "stockout_flag" in all_columns else ""
+    stockout_do_not = (
+        "\n- Do not recommend discounting products, SKUs, categories, or segments that are already "
+        "stocked out or likely to stock out; use substitutes, available alternatives, overstocked "
+        "items, demand shifting, or inventory allocation fixes instead."
+    ) if "stockout_flag" in all_columns else ""
+    metric_conflation_do_not = (
+        "\n- Do not treat lost_revenue_estimate and gross_margin_dollars as the same metric, "
+        "and do not add them together or rename the result as profit, lost profit, or total margin."
+    ) if "lost_revenue_estimate" in all_columns and "gross_margin_dollars" in all_columns else ""
     discount_rate_note = (
         "\n- Treat discount_rate as a rate only, not a summable revenue or impact metric."
     ) if "discount_rate" in all_columns else ""
@@ -2600,8 +2609,10 @@ LABELING RULES
 DO NOT DO
 - Do not extrapolate financial impacts.
 - Do not annualize figures.
+- Do not invent recovery amounts, lift percentages, conversion rates, retention rates, event counts, model accuracy, or new ratios unless those exact values are present in the computed statistics.
+- Do not use causal language for observed relationships; use association language such as "coincide with" or "are associated with" unless causal experiment evidence is present.
 - Do not claim forecast accuracy from a correlation between forecast_demand_units and units_sold when stockouts or supply constraints exist.
-- Deprioritize traffic or vanity metrics unless they directly connect to revenue, margin, units, or computed conversion behavior."""
+- Deprioritize traffic or vanity metrics unless they directly connect to revenue, margin, units, or computed conversion behavior.{stockout_do_not}{metric_conflation_do_not}"""
 
 
 def _build_hard_constraints(stats: dict) -> str:
