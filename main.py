@@ -37,10 +37,8 @@ REPORT_SAMPLE_ROWS: int = int(os.environ.get("REPORT_SAMPLE_ROWS", "10000"))
 # (well under max_tokens=20000) — so max_tokens alone doesn't protect against
 # a slow-but-short-so-far generation just sitting there. This is a generous
 # wall-clock ceiling that only ever fires if something has genuinely gone
-# wrong; it does not cap report length or change normal report depth. The
-# default leaves enough room for the complete public-example report shape,
-# while still preventing an indefinite hanging request. If crossed, whatever
-# was generated gets force-
+# wrong; it does not cap report length, shorten the prompt, or change normal
+# report depth in any way. If crossed, whatever was generated gets force-
 # closed into valid HTML (see _finalize_truncated_report_html) instead of
 # the connection hanging with nothing returned.
 REPORT_MAX_GENERATION_SECONDS: float = float(os.environ.get("REPORT_MAX_GENERATION_SECONDS", "300"))
@@ -1409,77 +1407,84 @@ def compute_dataset_stats(df: pd.DataFrame, target_col: str = None) -> dict:
     return clean(result)
 
 
-REPORT_SYSTEM_PROMPT = """You are a senior data scientist and strategic business analyst. You have been handed pre-computed statistics from a client dataset. Your job is to produce a complete Data Intelligence Report in the same style as the public Archimedes website sample: polished, practical, specific, and finished.
+REPORT_SYSTEM_PROMPT = """You are a world-class senior data scientist and strategic business analyst at a top-tier consulting firm. You have been handed pre-computed statistics from a client dataset. Your job is to produce a Data Intelligence Report that is thorough, insightful, and actionable.
 
-You will receive JSON containing pre-computed statistics. Output a single, complete, self-contained HTML page. No markdown. No explanation outside the HTML. Start with <!DOCTYPE html> and end with </html>.
+You will receive a JSON object containing pre-computed statistics. Your output must be a single, complete, self-contained HTML page — no markdown, no explanation outside the HTML, ONLY the HTML document starting with <!DOCTYPE html>.
 
-REPORT STRUCTURE (use exactly these 11 sections, in this order):
-1. Executive Summary - 5-7 strong bullets a CEO can read in 90 seconds. Lead with the most important finding. Include one specific opportunity and one specific risk.
-2. Dataset Health Audit - completeness, missing values, duplicates, data type issues, and outlier summary. Use green/amber/red badges.
-3. Statistical Deep Dive - for each numeric column, explain what the distribution means for the business. Keep it tight: one h3 and 1-2 short paragraphs per column.
-4. Categorical Intelligence - for each useful categorical column, explain distribution, entropy/diversity, dominance, and business meaning. Keep it to one h3 and one paragraph per column.
-5. Pattern & Correlation Analysis - interpret the strongest correlations and causal stories. If reliable time_series stats exist, include a short time-trends subsection here. Do not create a separate time section.
-6. Segment Analysis - use computed segment_rates, auto_segment_rates, auto_crosstab_rates, and segment_impact_summary. Rank by business impact first, then rate.
-7. Effect Size & Predictive Signals - use effect_sizes or auto_effect_sizes only when present. If absent, say effect sizes were not computed and rely on correlations/segments/impact totals.
-8. Business Recommendations - exactly 10 recommendations when supported, otherwise 8-10 with a note explaining why fewer were justified. Each recommendation needs: headline, Evidence, Impact, Difficulty, First step.
-9. Risk Flags - exactly 4 risks when supported, otherwise 3-4 with a note explaining why fewer were justified. Each risk needs severity and mitigation.
-10. What to Measure Next - exactly 5 data points, measurements, or experiments to validate the findings.
-11. Appendix: Numeric Column Statistics - a compact table with every numeric column and its core statistics.
+REPORT STRUCTURE (use exactly these sections in this order):
+1. EXECUTIVE SUMMARY — 5-7 punchy bullet points a CEO can read in 90 seconds. Lead with the single most important finding. Include one specific opportunity and one specific risk.
+2. DATASET HEALTH AUDIT — Completeness score, missing value analysis, duplicate assessment, data type issues, outlier summary. Color-code each finding: green (healthy), amber (monitor), red (action required).
+3. STATISTICAL DEEP DIVE — For each numeric column: interpret the distribution shape (not just the numbers — what does a skewness of 1.8 MEAN for this business?), flag outliers with business context, note if the column is normally distributed or not and why that matters.
+4. CATEGORICAL INTELLIGENCE — For each categorical column: what does the dominant category tell us? What is the diversity/entropy of this column? Are any categories dangerously underrepresented?
+5. TIME-BASED TRENDS — Only include this section if a "time_series" object is present in the data with a non-empty "numeric_trends" or "top_category_by_period". If present, this section is mandatory and must come before Pattern & Correlation Analysis. Report, by month: which numeric metrics increased or decreased over the observed periods and by how much (cite the exact pct_change_first_to_last and the first/last period sums), and which categories led each period if top_category_by_period is present. Call out the overall trend direction plainly (e.g. "Revenue rose 34% from 2023-01 to 2023-11" rather than vague language like "revenue has been growing"). If no time_series data is present (no usable date column was found), state in one sentence that no time-based analysis was possible because no reliable date column was detected, and skip the rest of this section.
+6. PATTERN & CORRELATION ANALYSIS — Interpret every strong correlation. Don't just say "X and Y are correlated at 0.72" — explain the causal story, what it implies operationally, and what the business should do with it.
+7. SEGMENT ANALYSIS — Use all computed segment rate data available. Check for "segment_rates", "auto_segment_rates", "auto_crosstab_rates", and "segment_impact_summary" in the statistics.
 
-STYLE TARGET:
-- Match the website sample report: clean dark Archimedes styling, readable prose, direct business analysis, clear section separators, stat cards, recommendation cards, and risk cards.
-- The tone is clear, direct, constructive, and practical. Serious findings are fine, but avoid theatrical language like catastrophic, crisis, disaster, bleeding, or failing system.
-- Complete the report matters more than decorative charts. Include simple SVG charts only when they clarify a key finding.
-- Write for a busy professional. One strong sentence beats three weak ones. Avoid repetition.
-- Do not add extra sections. Do not skip sections. Section numbers must be exactly 1 through 11.
+For auto_segment_rates: use "highest_rate_segment" and "lowest_rate_segment" for rate comparisons (not "best_segment" or "worst_segment" — those fields do not exist). Use "overall_rate_pct" for the company average. Use "pp_above_overall" for each segment's gap vs overall — do not recalculate this yourself. State exact rates and gaps (e.g. "Wholesale has a 39.3% stockout rate, 2.1pp above the company average of 37.2%").
 
-FACTUAL RULES:
-- Use only computed statistics provided in the JSON. Never invent rates, totals, categories, tiers, dollar impacts, correlations, Cohen's d values, model accuracy, event counts, lift, or recovery estimates.
-- Every statistic cited must be a complete statement with the actual number included.
-- If computed segment rates are present, never say you cannot confirm them. Use highest_rate_segment, lowest_rate_segment, overall_rate_pct, pp_above_overall, and pp_above_best exactly as provided.
-- For segment_impact_summary, use top_segments_by_primary_impact to identify the biggest business impact and top_segments_by_rate to discuss rate-based outliers. Always distinguish total impact from rate.
-- For auto_crosstab_rates, surface the top combinations by total business impact and mention rate separately.
-- Do not overstate gaps. Only call a segment meaningfully/significantly worse when the pp_above_overall gap is 5+ points. For smaller gaps, use modestly higher/lower.
-- Do not use effect sizes unless effect_sizes or auto_effect_sizes are present. Never estimate Cohen's d.
-- Do not cite outside industry benchmarks unless they are present in the provided stats.
-- Do not annualize unless annualized_* fields are present in the stats. Never derive an annualized estimate yourself from period length, even if the dataset covers 26 weeks or 3 months.
-- Never state specific recovery amounts, new lost revenue amounts, "tens of thousands," "$100K+," lift, precision, accuracy, or event-count projections unless those exact values are present in the stats. Directional phrases like "could reduce lost revenue" are acceptable.
-- Do not sum ratio/rate/score columns as currency or volume. If no impact column was detected, rank segments by count and rate only.
-- Low-cardinality numeric columns with value_counts are exact discrete values. List only the values that actually appear in value_counts; do not invent discount tiers, price bands, or buckets from histograms or means.
+For segment_impact_summary: each key is a binary outcome column name. Use "top_segments_by_primary_impact" to lead the executive summary with the biggest business impact, and "top_segments_by_rate" for rate-based rankings. Always distinguish between rate-based and revenue-impact-based rankings. The "primary_impact_column" field tells you which financial metric was used — name it correctly in the report rather than always calling it "lost revenue."
 
-ECOMMERCE / STOCKOUT RULES:
-- If stockout_flag exists, units_sold is inventory-capped observed demand, not true demand. A high correlation between forecast_demand_units and units_sold is not proof of forecast accuracy.
-- Never say forecasts are accurate, predicted demand matches actual sales, forecasting is strong, there is no demand prediction problem, or this is not a demand forecasting problem unless forecast_error, MAPE, MAE, or equivalent forecast accuracy fields are explicitly present.
-- lost_revenue_estimate means estimated revenue not captured due to stockout. It is not margin and not realized revenue.
-- gross_margin_dollars means realized gross margin on sold units only. Do not add it to lost_revenue_estimate and call that total lost profit.
-- forecast_demand_units is a planner/model forecast input, not a measure of forecast accuracy and not an uncensored true-demand signal.
-- week is a categorical week label unless time_series stats are explicitly computed.
-- Never recommend discounting products that are at risk of stocking out or already stocked out. The correct levers are increasing availability, shifting demand to substitutes, or discounting overstock/available alternatives.
+For auto_crosstab_rates: surface the top 3-5 combinations by total business impact (primary impact column), and mention stockout rate separately. Do not conflate rate and revenue impact — e.g. "Wholesale × Outdoor has the highest total lost revenue among all segment combinations, with a 42.6% stockout rate."
 
-MODEL / PLATFORM RULES:
-- If recommending predictive modeling, only mention supported platform algorithms: Random Forest, Gradient Boosting, Logistic Regression, Ridge Regression, and K-Means Clustering.
-- Do not recommend XGBoost, LightGBM, CatBoost, neural networks, deep learning, SVMs, or unsupported algorithms.
-- Include a model recommendation only when it follows from the data. Do not force it to Recommendation 1. Do not estimate accuracy, R^2, lift, or recovery unless trained model metrics are in the stats.
-- For mixed technical/non-technical readers, mark advanced recommendations with "(Advanced)".
+Never say you "cannot confirm" rates when computed data is present. Never infer or guess segment rates — if no computed rate exists, label it as a hypothesis.
+8. EFFECT SIZE & PREDICTIVE SIGNALS — Only use Cohen's d values if an "effect_sizes" or "auto_effect_sizes" object is present in the statistics. If effect sizes were computed, use them to explain which features actually matter for predicting the outcome and distinguish statistical significance from practical significance. If neither object is present, state explicitly that effect sizes were not computed for this dataset and rely on correlations, segment rates, and impact totals instead. Never invent or estimate Cohen's d values.
+9. BUSINESS RECOMMENDATIONS — Exactly 10 specific, prioritized recommendations. If evidence runs thin for later ones, frame them as investigative/process recommendations rather than quantified interventions — but never drop below 10 and never invent numbers to fill one out. Each must have: a bold headline action, the data evidence (cite specific numbers where real ones exist), estimated impact level (High/Medium/Low), implementation difficulty (Easy/Medium/Hard), and a specific first step.
+10. RISK FLAGS — Minimum 4 specific risks identified in the data. Each must have a severity level and a specific mitigation strategy.
+11. WHAT TO MEASURE NEXT — 5 specific data points or experiments the company should run to validate these findings.
+12. APPENDIX — Raw statistics table for each numeric column.
 
-MEDICAL / HUMAN-OUTCOME RULES:
-- Never use high-value/low-value language for medical or clinical datasets. Use neutral descriptive labels.
-- If image dimensions, file size, or technical metadata appear as predictive features in a medical imaging dataset, flag them as likely collection artifacts/confounders in the Executive Summary and Risk Flags. Recommend standardizing data collection, not using those technical artifacts as clinical predictors.
+STYLE RULES:
+- Use the brand colors: background #060e1f, primary text #f0faff, accent cyan #00d4ff, magenta #e040fb, gold #ffd600, teal #00b894, coral #ff4444
+- Each section must have a clear visual separator.
+- Use color-coded badges: 🟢 healthy/positive, 🟡 monitor/neutral, 🔴 risk/negative
+- Include small inline SVG bar charts for distributions and segment comparisons — build them with pure SVG, no libraries
+- The report must be printable (include @media print CSS)
+- Fonts: use system-ui or sans-serif, no external font imports
+- List item spacing: give all <li> elements margin: 16px 0 and padding: 4px 0 so bullets are easy to scan. For executive summary bullets specifically, add a left border: border-left: 3px solid rgba(0,212,255,0.3); padding-left: 12px; list-style: none; to make each point feel like a distinct card row rather than a tight list.
+- Make the recommendations SPECIFIC and NUMBERED. Every insight must cite a specific number from the statistics. Use a plain <div> or <ul> for recommendations — do NOT use <ol> tags, as the list numbers are already written inline in bold (e.g. '1. **Deploy Gradient Boosting**'). Using <ol> causes double numbering.
+- PERCENTAGE CHANGE ACCURACY: Always calculate percentage differences correctly as ((B - A) / A) * 100. For example: group A = 0.47, group B = 0.66 → ((0.66 - 0.47) / 0.47) * 100 = 40% higher, NOT 66% (that would be the raw value of B, not the change). Double-check every percentage claim before writing it.
+- The tone is clear, direct, and constructive — like a trusted advisor explaining what the numbers mean and what to do about it. Avoid dramatic or alarmist language (e.g. "catastrophic," "crisis," "disaster") even when describing serious issues. State the finding plainly, explain why it matters, and move to what can be done. A reader with no data background should feel informed and capable of acting, not alarmed.
 
-USER STEERING:
-- If the user provides focus/exclusion instructions, they are binding. Apply them throughout every section. If a section has little to say after applying the focus, say so plainly.
-- If a SAMPLING NOTE appears, include a short disclosure in the report introduction with exact numbers.
-- If MANDATORY FACTS appear, obey them exactly.
+CONTENT RULES:
+- SEGMENT ANALYSIS: Never use "high-value" or "low-value" language for medical or clinical datasets. Use neutral descriptive labels like "Tumor Positive Profile" and "No Tumor Profile". For business datasets, "high-converting segment" is fine but avoid implying one human outcome is more valuable than another.
+- RECOMMENDATIONS: If a predictive model recommendation is relevant, include it as one recommendation and explain why the model type fits the data characteristics (e.g. feature types, class balance, cardinality). Do not force it to be Recommendation 1 unless predictive modeling is genuinely the most important next action for this dataset. Do not estimate accuracy, R², lift, or recovery unless actual trained model metrics are provided in the statistics.
+- RISK FLAGS: Ensure severity labels match the actual risk described. Do not label a speculative or low-probability risk as HIGH severity. HIGH = immediate action needed, data is currently compromised. MEDIUM = monitor and investigate. LOW = document and revisit.
+- MISSING VALUES described as "outliers" must be clearly distinguished — a zero-inflated column is a distribution characteristic, not the same as IQR-based outliers. Describe them separately.
+- For mixed technical/non-technical audiences, flag advanced recommendations (PCA, feature engineering) with "(Advanced)" so non-technical users know they can skip these.
+- CONFOUNDING VARIABLES IN MEDICAL/IMAGE DATASETS: If image dimensions, file size, or other technical metadata appear as top predictive features in a medical imaging dataset, do NOT present them as clinical opportunities. Instead, flag them prominently as likely data collection artifacts or confounding variables. Explain clearly that: (1) the size difference probably reflects different image sources or equipment, not a biological signal; (2) a model trained on these features would likely fail on any standardized dataset; (3) the right action is to standardize image resolution before modeling, not to use dimensions as a feature. This warning must appear in the Executive Summary AND as a HIGH severity Risk Flag — not buried in recommendations. Never recommend building a classifier on technical metadata features in medical datasets without this caveat.
+- INTERNAL CONSISTENCY: Before writing recommendations, cross-check them against risk flags. If a risk flag contradicts a recommendation (e.g. recommending use of a feature that is simultaneously flagged as a data leakage risk), resolve the contradiction explicitly. The recommendation should defer to the risk — flag the issue and explain why the feature should not be used as-is.
+- LANGUAGE: Avoid alarmist bold lead-ins such as "CRITICAL FINDING," "CRISIS," "CATASTROPHIC," "VULNERABILITY," or similar dramatic framing — even in the Executive Summary or Risk Flags sections. Use plain, specific descriptions instead (e.g. "Customer identity gap:" instead of "CRITICAL FINDING:", "Revenue concentration:" instead of "CRISIS:"). The finding can still be serious and the language can still be direct — just not dramatic.
+- BASE-RATE SANITY CHECK: Before presenting any percentage or share as a notable finding (e.g. "X% of orders come from California"), check whether that number is close to a natural baseline you can reasonably infer — population share, category count, number of days/months in the period, even split across N groups, etc. If the number is unremarkable once compared to its baseline (e.g. 11.6% of orders from California, when California is ~11.5% of the US population), either omit it entirely or state explicitly that it tracks the expected baseline and is not a meaningful pattern. Never present a baseline-matching statistic as if it were an insight. Only highlight percentages that meaningfully deviate from a reasonable baseline.
+- SAMPLING DISCLOSURE: If a "SAMPLING NOTE" appears in the data you receive, you must include a short, clear disclosure in the report introduction — e.g. "Detailed statistics were computed on a representative 5,000-row sample of the full 48,000-row dataset." Use the exact numbers from the note. The top-level metadata (total row count, column count, missingness, duplicates) reflects the full dataset and should be presented as such. All statistical distributions and correlations are based on the sample and may differ slightly from full-dataset values.
+- SPECIFIC, NOT GENERIC RECOMMENDATIONS: Every recommendation must be derivable only from a specific number, trend, or pattern actually present in THIS dataset — not generic e-commerce/business playbook advice that could apply to any company. Before writing each recommendation, identify the exact statistic, correlation, segment rate, or trend driving it and cite it in the same sentence as the headline action. If a recommendation cannot be tied to a specific number from the data provided, do not include it. Avoid recommending things that are standard practice regardless of the data (e.g. generic "diversify your sales channels" advice) unless the data shows a specific concentration risk that justifies it with an exact figure.
+- NO EMOJIS IN HEADERS: Never use emoji characters in section headers or sub-headers. Plain text only.
+- TONE CALIBRATION: Never use dramatic or crisis language (e.g. "bleeding," "crisis," "failing system," "catastrophic"). Use direct, factual descriptions instead — e.g. "Stockouts are reducing revenue" or "inventory allocation is underperforming." The finding can be serious without being theatrical.
+- NO OUTSIDE BENCHMARKS: Never cite external industry benchmarks (e.g. "best-in-class targets sub-5% stockout rates") unless that benchmark is present in the dataset itself. If no benchmark data exists in the provided statistics, do not reference what competitors or industry standards achieve.
+- NO UNSUPPORTED QUANTITATIVE CLAIMS: Never state specific dollar recovery figures (e.g. "could recover $217K," "recover $36K annually," "recovering $240-400K"), model accuracy percentages, event count ranges, or precise lift estimates unless those exact values are explicitly present in the computed statistics. This includes phrases like "could recover approximately $X" or "a X% reduction could recover $Y" — and vaguer-sounding but equally unsupported magnitude claims like "tens of thousands," "$100K+," or "six figures" are covered by this same rule; vagueness does not make an unsupported number acceptable. Do not derive new projections or estimates in recommendations. Use directional phrasing only: "could recover a meaningful portion of lost revenue," "would reduce lost revenue," "could reduce the stockout rate significantly." Never calculate and state a recovery dollar amount that is not in the stats.
+- NO OVERSTATED COMPARISONS: When comparing segments, use the precomputed "pp_above_overall" and "pp_above_best" fields from auto_segment_rates — do not recalculate differences yourself. Only use strong language like "significantly underperforming" when the pp_above_overall gap is 5+ percentage points. For gaps under 5pp, use hedged language like "modestly higher stockout rate." Always verify that segment labels (highest/lowest) match the actual rates shown.
+- NO EFFECT SIZES WITHOUT DATA: Use "effect_sizes" or "auto_effect_sizes" only if present in the statistics. If neither is present, state that effect sizes were not computed and rely on correlations, segment rates, and impact totals instead. Never invent or estimate Cohen's d values.
+- CENSORED SALES / FORECAST ACCURACY: Never claim forecast accuracy or suggest the business "does not have a demand prediction problem" based on correlation between `forecast_demand_units` and `units_sold`. This is a hard prohibition, not a suggestion. When `stockout_flag` is present in the dataset, `units_sold` is inventory-capped observed demand — not true demand — and a high correlation between forecast and capped sales is not evidence of forecast accuracy. Any phrase like "forecasts are accurate," "predicted demand matches actual sales," "forecasting is strong," "no demand prediction problem," or "not a demand forecasting problem" must be replaced with a statement acknowledging the inventory-capping limitation. Never frame `forecast_demand_units` as an "uncensored demand signal" or any equivalent phrasing implying it reveals true, uncapped demand — it is a forecast input, not a demand measurement. Only claim forecast accuracy if `forecast_error`, `mape`, or `mae` is explicitly present in the statistics.
+- LOW-CARDINALITY NUMERIC VALUE COUNTS: For any numeric column that has a `value_counts` field in `numeric_analysis`, only list the values that actually appear there. Do not invent categories or tiers (e.g. discount tiers, price bands, threshold groups) beyond what is present in `numeric_analysis[col].value_counts`. If `numeric_analysis.discount_rate.value_counts` shows {"0.0": 5200, "0.05": 1400, "0.1": 600}, only those three tiers exist — never add or imply additional tiers. Never infer tiers or buckets from histogram bin edges, mean, median, skewness, outlier counts, or example values. If `value_counts` is absent for a column, do not speculate about its distribution structure at all — only report the summary statistics that are explicitly provided.
+- METRIC MEANINGS: The following field interpretations are fixed and must not be overridden by inference or correlation. Use the exact meaning when discussing each field. If a column matching these patterns is in the dataset, apply these definitions: `lost_revenue_estimate` = estimated revenue not captured due to stockout (not margin, not realized revenue); `gross_margin_dollars` = realized gross margin on sold units only; `units_sold` = observed sold units, may be capped by inventory when stockouts occur — not true demand; `forecast_demand_units` = model or planner forecast input, not a measure of forecast accuracy and not an uncensored true-demand signal; `week` = a categorical week label, not a continuous time series unless `time_series` stats are explicitly computed. Do not conflate `lost_revenue_estimate` with `gross_margin_dollars`. Do not claim "annual" figures unless `annualized_*` fields are present in the stats. Do not claim "regional spread" without computed `max_rate - min_rate` from region segment rates. Do not add `gross_margin_dollars` to `lost_revenue_estimate` and call the result "total lost gross profit" — these are different metrics and cannot be combined.
+- NO DOLLAR IMPACT WITHOUT CURRENCY COLUMN: If `impact_columns_included` is empty in the segment stats, no financial impact column was detected. In this case, rank segments by count and rate only. Do not estimate, infer, or invent dollar impact figures. Never sum ratio, rate, score, or expansion columns and present the result as a dollar amount.
+- SUPPORTED ALGORITHMS ONLY: When recommending a predictive model, only mention algorithms supported by this platform: Random Forest, Gradient Boosting, Logistic Regression, Ridge Regression, and K-Means Clustering. Do not recommend XGBoost, LightGBM, CatBoost, neural networks, deep learning, SVMs, or any other algorithm not in this list.
+- BUSINESS IMPACT FIRST: When ranking problems, prioritize total business impact over rate alone. A large segment with a slightly lower stockout rate but much higher total lost revenue is usually more important than a small high-rate segment. Use the *_positive_total fields in auto_segment_rates to rank by business impact. Always note both rate and total impact when discussing segments.
+- FINAL AUDIT: Before finalizing the report, check for math consistency: highest/lowest segment labels must match the rates shown; percentage point differences must equal rate A minus rate B using the precomputed pp_above_overall fields; relative differences must be labeled as relative not absolute; remove any unsupported event counts, recovery estimates, or model accuracy claims; remove any Cohen's d values unless present in auto_effect_sizes or effect_sizes. Also specifically scan for and remove these exact phrase patterns unless the exact supporting figures or fields they require are present in the stats: "not a demand forecasting problem" or "no demand prediction problem" (need forecast_error/mape/mae), "annualized estimate" or any annual dollar figure (need annualized_* fields), "recover $X," "tens of thousands," "$100K+," or "six figures" (need the exact figure in the stats), and "uncensored demand signal" (never acceptable framing for forecast_demand_units).
+- ANNUALIZED ESTIMATES: Never state an "annualized estimate" or any annual/yearly dollar or unit figure unless `annualized_*` fields are explicitly present in the statistics. If the dataset covers a partial period (e.g. 26 weeks, 3 months) and no `annualized_*` field exists, do not derive your own annualized number by scaling a partial-period figure — report only the actual period covered (e.g. "$1.2M in lost revenue over the 26 weeks of data," not "$2.4M annualized"). If an `annualized_*` field IS present, use that exact value and label it clearly as an annualized estimate — never state it as a confirmed annual figure.
+- NO DISCOUNTING STOCKOUT ITEMS: Never recommend discounting products that are at risk of stocking out or already stocked out. Discounting accelerates depletion and worsens the stockout. The correct levers are: discounting substitutes, discounting overstock of alternative SKUs, or demand-shifting promotions on available inventory.
+- NO SKU RETIREMENT FROM STOCKOUT DATA ALONE: Never recommend retiring, discontinuing, or consolidating SKUs/products/categories based on low stockout rate or low lost-revenue total alone. Low lost revenue from stockouts says nothing about margin, sell-through velocity, strategic assortment value, customer demand, or substitutability — none of which are typically present in stockout stats. If assortment rationalization comes up, frame it as a question to investigate with the missing data, not a recommendation to act on.
+- USER STEERING INSTRUCTIONS: If the user message includes steering instructions (e.g. "only focus on Product X", "exclude category Y", "I only care about repeat customers"), these are not optional context — they are binding constraints on the entire report. Apply them consistently across every section: the Executive Summary, statistical analysis, segment analysis, and recommendations must all reflect the requested focus. If honoring the instruction means a section has little or nothing to say (e.g. excluding a category that dominates the dataset leaves few rows), say so plainly rather than quietly reverting to analyzing the full unfiltered dataset.
 
-COMPLETION RULES:
-- Never cut a sentence mid-thought. If running long, shorten earlier prose so sections 8-11 still finish.
-- Cap section depth: Statistical Deep Dive one h3 and 1-2 short paragraphs per numeric column; Categorical Intelligence one paragraph per categorical column; Pattern Analysis top 4-6 patterns; Segment Analysis top 6-10 segments/combinations.
-- Every recommendation must be complete with Evidence, Impact, Difficulty, and First step.
-- Every risk must be complete with severity and mitigation.
-- The Appendix table must include every numeric column. Shorten descriptions elsewhere rather than omitting appendix columns.
-- Final audit before output: remove any phrases claiming "not a demand forecasting problem," "annualized estimate," "recover $X," "tens of thousands," "$100K+," or "uncensored demand signal" unless those exact quantities or forecast-accuracy fields are present in the stats.
+IMPORTANT: Keep the HTML concise. Do not pad with unnecessary whitespace or repetition. Prioritize completing all 12 sections over decorative detail. Section numbers must be strictly sequential: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 — no gaps, no skipped numbers, no repeated numbers. Every section header must display its number.
 
-CSS: Use exactly this stylesheet in the <style> tag:
+- Never cut a sentence mid-thought. If you are running low on space, shorten earlier sections rather than leaving a sentence incomplete.
+- Every statistic cited must be a complete statement: never write "r=" or "Cohen's d =" without the actual value following it.
+- Write tight prose. One strong sentence beats three weak ones. The goal is a report a busy professional can read in 10 minutes.
+- Every recommendation must be a complete thought with all four parts present: Evidence, Impact, Difficulty, and First Step. Never leave a recommendation half-written.
+- Business Recommendations: exactly 10 recommendations. Do not stop at 8. If later recommendations have weaker evidence than the earlier ones, make them investigative or process recommendations (e.g. "investigate X," "review Y process," "audit Z before acting") rather than quantified interventions — but every one of the 10 must still be grounded in stats actually provided, even the investigative ones. Never invent recovery dollars, event counts, model performance figures, or exact intervention lift to fill out a recommendation.
+- APPENDIX: The statistics table must include EVERY numeric column in the dataset without exception. Do not omit columns to save space — shorten descriptions elsewhere if needed.
+
+CSS: Use exactly this stylesheet in the <style> tag — do not invent alternative colors, fonts, or layouts:
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #060e1f; color: #f0faff; font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; padding: 40px 20px; }
 .container { max-width: 1200px; margin: 0 auto; }
@@ -1562,10 +1567,23 @@ async def build_prompt(
 ):
     """Generate a focused report steering prompt from the user's answers.
 
-    Loads dataset stats when a file_id is provided so the prompt can include
-    context-aware guardrails — e.g. flagging detected binary outcome columns,
-    warning against guessing segment rates, and steering away from unsupported
-    quantitative claims. Falls back gracefully if stats are unavailable.
+    This endpoint used to ask Claude to write "a concise steering prompt
+    (3-5 sentences)" with the quality guardrails embedded naturally into the
+    prose — which produced exactly the undifferentiated paragraph problem
+    that kept resurfacing downstream. It also duplicated, in a separate
+    hand-rolled block, much of what _build_steering_block already does more
+    thoroughly (real computed stats vs. this endpoint's own column-name
+    keyword guessing).
+
+    Fixed by narrowing what Claude is asked for — a single, short OBJECTIVE
+    statement only, nothing else — and then routing that objective through
+    the SAME _build_steering_block function used at actual report-generation
+    time. No second API call was added: this is still exactly one call to
+    Claude, just asked for something narrower, with the (already-existing)
+    structuring function doing the rest deterministically in code. The
+    practical effect: what a user sees here as their "prompt preview" now
+    IS the real structured prompt, not a paragraph that gets restructured
+    later out of view.
 
     Args:
         req: The user's answers to the three prompt-builder questions plus
@@ -1573,11 +1591,12 @@ async def build_prompt(
         user_id: Authenticated user ID from the request token.
 
     Returns:
-        A dict with a "prompt" key containing the generated steering prompt.
+        A dict with a "prompt" key containing the full structured steering
+        prompt (REPORT OBJECTIVE / ANALYSIS FOCUS / METRICS TO PRIORITIZE /
+        EVIDENCE RULES / LABELING RULES / DO NOT DO).
     """
-    # Load dataset stats if a file_id was provided
-    dataset_context_lines: list[str] = []
-    binary_outcome_cols: list[str] = []
+    stats: Optional[dict] = None
+    binary_outcome_hint = ""
 
     if req.file_id:
         data_path = DATA_DIR / f"{req.file_id}.pkl"
@@ -1585,151 +1604,49 @@ async def build_prompt(
         if data_path.exists():
             try:
                 df = pd.read_pickle(str(data_path))
+                df_for_stats, _, _ = sample_for_report(df, None, REPORT_SAMPLE_ROWS)
+                stats = compute_dataset_stats(df_for_stats)
+                stats["columns"] = list(df.columns)
                 binary_outcome_cols = _find_binary_outcome_cols(df)
-
                 if binary_outcome_cols:
-                    dataset_context_lines.append(
-                        f"Detected binary outcome columns: {', '.join(binary_outcome_cols)}. "
-                        "The report will have precomputed segment rates for these — "
-                        "instruct the model to use actual computed rates only, never estimate."
-                    )
-
-                # Flag high-cardinality columns that might tempt the model to guess
-                cat_nunique = {
-                    col: int(df[col].nunique())
-                    for col in df.select_dtypes(include="object").columns
-                    if df[col].nunique() <= 50
-                }
-                if cat_nunique:
-                    dataset_context_lines.append(
-                        f"Low/medium cardinality categorical columns available for segmentation: "
-                        f"{', '.join(cat_nunique.keys())}."
-                    )
+                    binary_outcome_hint = f"\nDetected binary outcome columns: {', '.join(binary_outcome_cols)}."
             except Exception:
                 pass  # degrade gracefully — still generate a prompt without stats
 
     col_list = f"Column names: {', '.join(req.columns[:30])}" if req.columns else ""
-    dataset_block = "\n".join(dataset_context_lines)
 
-    # Build dataset-aware guardrails based on what's actually in the columns.
-    # These are generic pattern detections — not dataset-specific.
-    cols_lower = [c.lower() for c in req.columns]
-
-    # Detect binary outcome columns (any column suggesting a flag/event outcome)
-    outcome_keywords = ("flag", "churn", "convert", "default", "fraud", "cancel",
-                        "return", "dropout", "attrition", "bounce", "event", "stockout")
-    binary_outcome_cols = [c for c in req.columns
-                             if any(kw in c.lower() for kw in outcome_keywords)
-                             and not any(c.lower().endswith(s) for s in ("_rate", "_ratio", "_score", "_pct", "_index"))]
-
-    # Detect forecast/prediction columns paired with an actuals column
-    forecast_cols = [c for c in req.columns if any(kw in c.lower() for kw in ("forecast", "predicted", "estimate", "target"))]
-    actual_cols = [c for c in req.columns if any(kw in c.lower() for kw in ("sold", "actual", "observed", "realized"))]
-
-    # Detect ratio/rate/score columns that shouldn't be summed as currency
-    ratio_cols = [c for c in req.columns if any(c.lower().endswith(s) for s in
-                  ("_rate", "_ratio", "_pct", "_percent", "_score", "_index"))]
-
-    # Detect revenue/financial impact columns
-    revenue_cols = [c for c in req.columns if any(kw in c.lower() for kw in
-                    ("revenue", "margin", "profit", "amount", "sales", "lost_revenue"))]
-
-    # Detect date/time columns
-    date_cols = [c for c in req.columns if any(
-                  re.search(r"(?:^|_)" + kw + r"(?:_|$)", c.lower())
-                  for kw in ("date", "week", "month", "quarter", "year", "period", "timestamp"))]
-
-    guardrails = """
-Quality guardrails to embed in the prompt:
-- Use only the actual computed statistics for all claims. Never estimate, guess, or infer values for any segment, column, or time period not directly present in the data.
-- Clearly separate confirmed findings (backed by computed data) from hypotheses or recommendations that go beyond what the data shows. Label each explicitly so the reader knows what is proven vs. directional.
-- Avoid all specific dollar recovery estimates, percentage lift claims, or model accuracy predictions unless those exact values appear in the computed statistics.
-- Do not use dramatic language. Use direct, factual descriptions."""
-
-    if binary_outcome_cols:
-        guardrails += f"""
-- For binary outcome columns ({', '.join(binary_outcome_cols[:3])}): use only the computed segment rates. Never estimate rates for segments not in the data."""
-
-    if forecast_cols and actual_cols:
-        guardrails += f"""
-- Do not claim forecast accuracy from the correlation between {forecast_cols[0]} and {actual_cols[0]}. If stockouts, cancellations, or capacity constraints exist, observed actuals are censored and this correlation does not measure forecast quality."""
-
-    if ratio_cols:
-        guardrails += f"""
-- Do not sum or aggregate ratio/rate columns ({', '.join(ratio_cols[:3])}) as if they were currency or volume figures. Use them only as rates."""
-
-    if revenue_cols:
-        guardrails += f"""
-- When citing financial impact, only use computed totals from {', '.join(revenue_cols[:2])}. Do not extrapolate, annualize, or estimate recovery amounts beyond what is directly in the segment data.
-- If a computed revenue figure exists, call it revenue; do not show your own arithmetic or combine separate fields to create a new revenue/profit/margin formula.
-- Use exact field names for financial metrics. For example, call gross_margin_dollars "gross_margin_dollars" or "realized gross margin on sold units"; do not rename it "profit" or "lost profit" unless the data contains that exact computed field."""
-
-    if date_cols:
-        guardrails += f"""
-- Only describe time-based trends if time_series statistics were explicitly computed. Do not infer trends from week/date labels alone.
-- Leave time entirely out of the report objective unless the user's main question explicitly asks for time analysis and computed time_series statistics are available."""
-
-    guardrails += """
-- Use association language only. Say patterns "coincide with" or "are associated with" outcomes; do not say a field, segment, or decision "causes" an outcome unless the dataset contains causal experiment evidence.
-- Do not introduce unrequested ratios, rates, conversion metrics, retention metrics, or lift calculations unless those exact values are computed in the available statistics.
-- Do not frame findings as conversion or retention analysis unless conversion/retention statistics are explicitly part of this dataset."""
-
-    user_message = f"""You are helping a user write a focused steering prompt for a data intelligence report generator.
+    user_message = f"""You are helping a user write a short, clear OBJECTIVE statement for a data intelligence report — NOT a full instruction set. Evidence rules, labeling requirements, and other guardrails are added automatically afterward in code; do not write any of those yourself.
 
 {f"Dataset description: {req.q1}" if req.q1 else ""}
-{col_list}
-{dataset_block}
+{col_list}{binary_outcome_hint}
 Main question: {req.q2}
 {f"Exclude or deprioritize: {req.q3}" if req.q3 else ""}
-{guardrails}
 
-Write a structured steering prompt the user will paste into their report generator before running it.
+Write ONLY a 2-3 sentence objective describing what this report should focus on, based on the main question above. Reference the relevant columns by name where it helps clarity.
 
-Use exactly this section format:
+Do NOT do any of the following in the objective, even though it may feel natural:
+- Do not invent a formula for a metric (e.g. "revenue (units_sold × unit_price)") — if a computed revenue figure exists, just say "revenue"; do not show your own arithmetic for how it's derived.
+- Do not use vague umbrella terms like "profit" — name the exact field instead (e.g. gross_margin_dollars).
+- Do not use causal language ("causing", "leads to", "drives down") for a relationship that's only ever been observed as a correlation or co-occurrence — say "coincide with" or "are associated with" instead of "cause."
+- Do not reference a ratio, rate, or "relative to X" comparison unless you know it's a value the statistics actually compute — if unsure, describe the two quantities separately instead of a derived ratio.
+- Do not claim or imply "conversion" or "retention" issues unless conversion/retention statistics are explicitly part of this dataset — for a plain sales/orders dataset, describe volume or margin patterns instead.
+- Do not mention time trends, trends "over time," or trends by week/month/period — that is handled separately and conditionally elsewhere; if you include it here, it directly contradicts a guardrail that gets added after your text, so leave time entirely out of the objective.
+- Do not include evidence rules, labeling instructions, or anything about avoiding estimates — none of that belongs in this objective statement.
+- If describing disproportionate stockouts or revenue loss, phrase it as relative to computed segment totals or rates — never "relative to demand," since observed demand is censored (artificially capped) whenever a stockout occurs, so true demand isn't something the data can actually measure.
 
-REPORT OBJECTIVE
-One concise paragraph stating what the report should focus on.
+Example of a well-scoped objective for a similar dataset (for style/scope reference only, not to copy verbatim): "Identify which products by sku and category, regions, and acquisition channels generate the highest computed revenue and gross_margin_dollars. Surface segments where precomputed stockout_flag rates and lost_revenue_estimate indicate inventory or conversion problems. Highlight only computed patterns involving units_sold, unit_price, discount_rate, and gross_margin_dollars."
 
-KEY QUESTIONS
-1. Three to five numbered questions the report should answer.
-
-METRICS AND FIELDS TO PRIORITIZE
-- Bullet list of relevant columns and computed metrics.
-
-EVIDENCE RULES
-- Bullet list of factual guardrails, including using only computed statistics.
-
-LABELING RULES
-- Bullet list explaining how to label confirmed findings versus hypotheses/recommendations.
-
-DO NOT DO
-- Bullet list of prohibited unsupported claims, extrapolations, or irrelevant metric usage.
-
-Rules:
-- Do not collapse the output into one paragraph.
-- Do not add a preamble or explanation.
-- Do not use markdown fences.
-- Keep the whole prompt concise, but preserve the section headers exactly."""
+Output the objective text only — no preamble, no explanation, no section headers."""
 
     try:
         response = client.messages.create(
             model="claude-sonnet-4-5",
-            max_tokens=400,
+            max_tokens=200,
             messages=[{"role": "user", "content": user_message}]
         )
-        prompt_text = response.content[0].text.strip()
-        section_headers = [
-            "REPORT OBJECTIVE",
-            "KEY QUESTIONS",
-            "METRICS AND FIELDS TO PRIORITIZE",
-            "EVIDENCE RULES",
-            "LABELING RULES",
-            "DO NOT DO",
-        ]
-        for header in section_headers:
-            prompt_text = re.sub(rf"\s*({re.escape(header)})\s*", r"\n\n\1\n", prompt_text)
-        prompt_text = re.sub(r"\n{3,}", "\n\n", prompt_text).strip()
-        return {"prompt": prompt_text}
+        objective_text = response.content[0].text.strip()
+        structured_prompt = _build_steering_block(objective_text, stats).strip()
+        return {"prompt": structured_prompt}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1975,6 +1892,110 @@ def _finalize_truncated_report_html(html: str, notice: str) -> str:
     if finder.html_open and not finder.html_closed:
         result += "</html>"
     return result
+
+
+def _validate_report_quality(html: str) -> list[str]:
+    """Check a fully repaired/audited report for hard rejection criteria.
+
+    This runs LAST, after every repair pass (_repair_html_tags,
+    _repair_corrupted_list_items, section number fixes, etc.) has already had
+    a chance to fix what it can. Anything still present here means the
+    report must be REJECTED, not shipped with a best-effort patch — these
+    are specific, real corruption/completion signatures observed in actual
+    shipped output, not speculative edge cases.
+
+    Args:
+        html: The fully repaired report HTML, ready for final output.
+
+    Returns:
+        A list of rejection reasons. Empty list means the report passes and
+        is safe to return as a completed report.
+    """
+    reasons: list[str] = []
+
+    exec_match = re.search(r'<ul class="exec-summary">(.*?)</ul>', html, re.DOTALL)
+    if exec_match:
+        li_count = len(re.findall(r'<li>', exec_match.group(1)))
+        if li_count < 7:
+            reasons.append(f"Executive Summary has only {li_count} <li> items (need at least 7).")
+    else:
+        reasons.append('Executive Summary <ul class="exec-summary"> block not found.')
+
+    # A bullet whose content starts with a stray numeric fragment like "95)"
+    # or "6%)" is a strong signal that a sentence was cut and merged with the
+    # start of another — the exact defect observed in a real shipped report.
+    fragment_starts = re.findall(r'<li>\s*(?:<strong>)?\s*\d+(?:\.\d+)?%?\)', html)
+    if fragment_starts:
+        reasons.append(
+            f"Found {len(fragment_starts)} <li> starting with a corrupted numeric "
+            f"fragment (e.g. {fragment_starts[0]!r})."
+        )
+
+    if re.search(r'%\.\s*\d+%', html):
+        reasons.append("Found the '%. N%' corruption signature (merged sentence fragments).")
+    if re.search(r'\)\.\d+\)', html):
+        reasons.append("Found the ').N)' corruption signature (merged sentence fragments).")
+
+    rec_count = len(re.findall(r'<div class="rec-headline">', html))
+    if rec_count != 10:
+        reasons.append(f"Found {rec_count} recommendations (need exactly 10).")
+
+    return reasons
+
+
+def _repair_corrupted_list_items(html: str) -> tuple[str, list[str]]:
+    """Remove empty bullets and auto-close unclosed <li> elements.
+
+    This is a different defect class than _repair_html_tags (which fixes a
+    closing tag that names the WRONG element, e.g. closing a <li> with
+    </h3>). This function handles two specific things observed in a real
+    generated report: an <li> that opens, has content, but is never closed
+    before the next <li> starts (browsers auto-close this visually, but it's
+    still malformed HTML worth fixing at the source), and a completely empty
+    <li></li> with no content at all — always a defect, never intentional.
+
+    Also detects (but does not attempt to silently rewrite) a specific text-
+    corruption signature: a closing paren immediately followed by a period,
+    digits, and another closing paren (e.g. "Cohen's d = -0.66).95) confirms"),
+    which is a strong signal that two sentences were merged with a chunk of
+    text missing between them. Reconstructing the intended sentence isn't
+    something that can be done safely/automatically, so this is surfaced as
+    a warning for review rather than guessed at and silently rewritten.
+
+    Args:
+        html: The report HTML to repair.
+
+    Returns:
+        A tuple (repaired_html, warnings) — warnings is empty if nothing
+        suspicious was found.
+    """
+    warnings_found: list[str] = []
+
+    # Remove genuinely empty bullets (with only whitespace between the tags).
+    empty_li_count = len(re.findall(r'<li>\s*</li>', html))
+    if empty_li_count:
+        html = re.sub(r'<li>\s*</li>', '', html)
+        warnings_found.append(f"Removed {empty_li_count} empty <li></li> bullet(s).")
+
+    # Auto-close an <li> that runs straight into the next <li> without ever
+    # closing — insert the missing </li> right before the next opening tag.
+    unclosed_pattern = re.compile(r'(<li\b[^>]*>(?:(?!</li>|<li\b).)*?)(?=<li\b)', re.DOTALL)
+    html, n_closed = unclosed_pattern.subn(r'\1</li>', html)
+    if n_closed:
+        warnings_found.append(f"Auto-closed {n_closed} <li> element(s) missing their closing tag.")
+
+    # Flag (do not rewrite) the specific corruption signature: ").<digits>)"
+    # with no space/operator before the digits — e.g. "-0.66).95) confirms".
+    corruption_matches = re.findall(r'\)\.\d+\)', html)
+    if corruption_matches:
+        warnings_found.append(
+            f"POSSIBLE TEXT CORRUPTION: found {len(corruption_matches)} instance(s) of a "
+            f"').<digits>)' pattern (e.g. {corruption_matches[0]!r}) — this usually means two "
+            f"sentences were merged with text missing between them. Needs manual review; not "
+            f"auto-repaired since reconstructing the intended sentence isn't safe to guess at."
+        )
+
+    return html, warnings_found
 
 
 def _repair_html_tags(html: str) -> str:
@@ -2468,6 +2489,119 @@ def _validate_segment_completeness(html: str, stats: dict) -> str:
 
     insert_block = "\n" + "\n".join(additions) + "\n"
     return html[:section_end] + insert_block + html[section_end:]
+
+
+def _build_steering_block(dataset_context: Optional[str], stats: Optional[dict] = None) -> str:
+    """Render a user-supplied report focus/steering instruction as a
+    structured, sectioned template — not a single paragraph.
+
+    Two upgrades over a plain paragraph, both applied automatically by the
+    prompt BUILDER rather than depending on the user writing a well-formed
+    instruction:
+
+    1. Sectioned output (REPORT OBJECTIVE / ANALYSIS FOCUS / METRICS TO
+       PRIORITIZE / EVIDENCE RULES / LABELING RULES / DO NOT DO) gives the
+       model separate, unambiguous "slots" to obey instead of one paragraph
+       it can partially miss.
+    2. ANALYSIS FOCUS and METRICS TO PRIORITIZE are populated dynamically
+       FROM THE ACTUAL DATASET's computed stats (categorical and numeric
+       columns actually present), not hardcoded to one dataset's field names
+       like gross_margin_dollars/stockout_flag. A healthcare or marketing
+       dataset gets its own real columns listed here, not ecommerce fields
+       that don't exist in its data. Each categorical column is framed as
+       "X drivers" (deterministic string formatting, not a second API call),
+       and a "Stockout/lost revenue problem areas" line is added whenever
+       stockout_flag or lost_revenue_estimate exist in the data.
+
+    The user's own dataset_context text becomes the REPORT OBJECTIVE
+    verbatim — this function does not attempt to rewrite or reinterpret it,
+    only to structure the guardrails and dynamic metric list around it.
+
+    Args:
+        dataset_context: The raw user-supplied focus/steering text, or None
+            if the user didn't provide one.
+        stats: The computed dataset statistics (from compute_dataset_stats),
+            used to populate the segment/metric lists dynamically. If not
+            provided, those sections fall back to a generic placeholder
+            rather than guessing at field names.
+
+    Returns:
+        The structured steering block ready to append to the prompt context,
+        or an empty string if dataset_context was empty/None.
+    """
+    if not dataset_context:
+        return ""
+
+    stats = stats or {}
+    all_columns = stats.get("columns") or []
+    categorical_cols = list((stats.get("categorical_analysis") or {}).keys())[:10]
+    numeric_cols = [
+        col for col in (stats.get("numeric_analysis") or {}).keys()
+        if not _ID_NAME_PATTERN.search(str(col))
+    ][:12]
+
+    # Directive "X drivers" framing instead of a bare column-name list — cheap
+    # to derive deterministically from the same columns already extracted
+    # for METRICS TO PRIORITIZE, no second API call needed to get this. A
+    # dedicated stockout/lost-revenue line is added only when those specific
+    # fields exist, since that's a distinct analysis focus (problem areas,
+    # not just performance drivers) worth calling out on its own.
+    #
+    # Date/time-label columns (week, month, etc.) are deliberately EXCLUDED
+    # from "drivers" framing — a raw time label with no computed time_series
+    # stats behind it invites the model to invent a trend from a bare label,
+    # which is exactly the failure mode this is guarding against. If such a
+    # column exists, a plain caveat bullet replaces it instead.
+    has_time_like_column = any(_TIME_LIKE_NAME_PATTERN.search(str(c)) for c in categorical_cols)
+    segment_lines = [f"- {c} drivers" for c in categorical_cols if not _TIME_LIKE_NAME_PATTERN.search(str(c))]
+    if "stockout_flag" in all_columns or "lost_revenue_estimate" in all_columns:
+        segment_lines.append("- Stockout/lost revenue problem areas")
+    if has_time_like_column:
+        segment_lines.append("- Time trends only if time_series statistics were explicitly provided")
+    segment_section = "\n".join(segment_lines) if segment_lines else "- (no categorical segment columns detected in this dataset)"
+    metrics_section = "\n".join(f"- {c}" for c in numeric_cols) if numeric_cols else "- (no numeric metric columns detected in this dataset)"
+
+    # Only mention these specific fields if they actually exist in THIS
+    # dataset — a template that references fields absent from the data is
+    # worse than no mention at all, since it invites the model to go looking
+    # for something that isn't there.
+    forecast_note = (
+        "\n- forecast_demand_units: use only as context, never as proof of forecast accuracy — "
+        "a correlation with units_sold does not confirm the forecast is accurate when stockouts "
+        "or supply constraints exist."
+    ) if "forecast_demand_units" in all_columns else ""
+    stockout_note = (
+        "\n- For stockout_flag specifically, cite only the precomputed segment rates provided in "
+        "the statistics. Do not infer or calculate a stockout rate for any segment not included."
+    ) if "stockout_flag" in all_columns else ""
+    discount_rate_note = (
+        "\n- Treat discount_rate as a rate only, not a summable revenue or impact metric."
+    ) if "discount_rate" in all_columns else ""
+
+    return f"""
+
+REPORT OBJECTIVE
+{dataset_context}
+
+ANALYSIS FOCUS
+{segment_section}
+
+METRICS TO PRIORITIZE
+{metrics_section}{forecast_note}
+
+EVIDENCE RULES
+- Use only actual computed statistics for all segment metrics.
+- Never estimate values for segments, time periods, or outcomes not directly present in the data.{stockout_note}{discount_rate_note}
+
+LABELING RULES
+- Label claims as "confirmed by data" when backed by computed statistics.
+- Label suggestions as "hypothesis/recommendation" when they go beyond what the numbers directly show.
+
+DO NOT DO
+- Do not extrapolate financial impacts.
+- Do not annualize figures.
+- Do not claim forecast accuracy from a correlation between forecast_demand_units and units_sold when stockouts or supply constraints exist.
+- Deprioritize traffic or vanity metrics unless they directly connect to revenue, margin, units, or computed conversion behavior."""
 
 
 def _build_hard_constraints(stats: dict) -> str:
@@ -3217,7 +3351,7 @@ async def analyze_report_stream(
     if was_sampled:
         stats["sampling_note"] = sampling_note
 
-    context_block = f"\n\nUSER STEERING INSTRUCTIONS (apply these as filters/focus for the entire report — if the user asks to focus on a specific product, category, time period, or to exclude something, honor that throughout every section rather than analyzing the full dataset): {dataset_context}" if dataset_context else ""
+    context_block = _build_steering_block(dataset_context, stats)
     if sampling_note:
         context_block = f"\n\nSAMPLING NOTE: {sampling_note}" + context_block
 
@@ -3274,111 +3408,161 @@ Generate the complete Data Intelligence Report HTML page now. Remember: ONLY out
             # Immediate heartbeat to keep connection alive
             yield f"data: {json_mod.dumps({'type': 'heartbeat'})}\n\n"
 
-            generation_start = time.monotonic()
+            # Bounded retry: if the hard quality gate below rejects a report,
+            # try once more before giving up. This is a full re-generation
+            # (a second complete API call), not a text patch — the whole
+            # point is that a corrupted/incomplete report gets a genuine
+            # do-over, not a manual touch-up. Capped at 2 total attempts so
+            # a dataset that reliably produces bad output doesn't silently
+            # double every user's wait time and cost indefinitely.
+            MAX_GENERATION_ATTEMPTS = 2
+            report_html = ""
+            rejection_reasons: list[str] = []
             truncated = False
 
-            with client.messages.stream(
-                model="claude-sonnet-4-5",
-                max_tokens=20000,
-                system=REPORT_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": user_message}]
-            ) as stream:
-                char_count = 0
-                for text in stream.text_stream:
-                    html_chunks.append(text)
-                    char_count += len(text)
-                    # Send progress heartbeats (character count only, never raw HTML)
-                    # so the frontend knows generation is active without rendering
-                    # unaudited content. The final audited HTML arrives as final_html.
-                    if char_count % 500 < len(text):
-                        yield f"data: {json_mod.dumps({'type': 'progress', 'chars': char_count})}\n\n"
+            for attempt_num in range(1, MAX_GENERATION_ATTEMPTS + 1):
+                html_chunks = []
+                generation_start = time.monotonic()
+                truncated = False
 
-                    # Wall-clock insurance only — no character cap. Breaking
-                    # here (still inside the `with` block) closes the
-                    # underlying stream connection via its context manager on
-                    # exit, rather than us just abandoning it.
-                    if time.monotonic() - generation_start >= REPORT_MAX_GENERATION_SECONDS:
-                        truncated = True
-                        break
+                if attempt_num > 1:
+                    yield f"data: {json_mod.dumps({'type': 'progress', 'chars': 0})}\n\n"
 
-            # Clean up the assembled HTML
-            report_html = "".join(html_chunks).strip()
-            if '```' in report_html:
-                lines = report_html.split('\n')
-                lines = [l for l in lines if not l.strip().startswith('```')]
-                report_html = '\n'.join(lines).strip()
+                with client.messages.stream(
+                    model="claude-sonnet-4-5",
+                    max_tokens=20000,
+                    system=REPORT_SYSTEM_PROMPT,
+                    messages=[{"role": "user", "content": user_message}]
+                ) as stream:
+                    char_count = 0
+                    for text in stream.text_stream:
+                        html_chunks.append(text)
+                        char_count += len(text)
+                        # Send progress heartbeats (character count only, never raw HTML)
+                        # so the frontend knows generation is active without rendering
+                        # unaudited content. The final audited HTML arrives as final_html.
+                        if char_count % 500 < len(text):
+                            yield f"data: {json_mod.dumps({'type': 'progress', 'chars': char_count})}\n\n"
 
-            if not report_html.startswith("<!DOCTYPE") and not report_html.startswith("<html"):
-                idx = report_html.find("<!DOCTYPE")
-                if idx == -1:
-                    idx = report_html.find("<html")
-                if idx != -1:
-                    report_html = report_html[idx:]
+                        # Wall-clock insurance only — no character cap. Breaking
+                        # here (still inside the `with` block) closes the
+                        # underlying stream connection via its context manager on
+                        # exit, rather than us just abandoning it.
+                        if time.monotonic() - generation_start >= REPORT_MAX_GENERATION_SECONDS:
+                            truncated = True
+                            break
 
-            # Only triggers if REPORT_MAX_GENERATION_SECONDS was actually
-            # crossed — a rare, "something went wrong" case, not a routine
-            # part of normal report generation. The document is likely
-            # missing many closing tags at once (not just a mismatch —
-            # _repair_html_tags below fixes mismatches, not wholesale
-            # unclosed nesting), so it needs force-closing here first.
-            if truncated:
-                notice = (
-                    "Analysis was limited to the available generation window — generation took "
-                    "longer than expected. The sections above reflect real, computed statistics; "
-                    "anything past this point was not generated."
-                )
-                report_html = _finalize_truncated_report_html(report_html, notice)
+                # Clean up the assembled HTML
+                attempt_html = "".join(html_chunks).strip()
+                if '```' in attempt_html:
+                    lines = attempt_html.split('\n')
+                    lines = [l for l in lines if not l.strip().startswith('```')]
+                    attempt_html = '\n'.join(lines).strip()
 
-            # ── Two-pass surgical audit (delegated to helper) ────────────────
-            try:
-                report_html, patches_applied, patches_skipped = _audit_report_html(report_html, stats)
-                if patches_applied or patches_skipped:
-                    yield f"data: {json_mod.dumps({'type': 'audit', 'applied': patches_applied, 'skipped': patches_skipped})}\n\n"
-            except Exception as audit_ex:
-                print(f"[audit] skipped due to error: {audit_ex}")
-            # ── End audit ────────────────────────────────────────────────────
+                if not attempt_html.startswith("<!DOCTYPE") and not attempt_html.startswith("<html"):
+                    idx = attempt_html.find("<!DOCTYPE")
+                    if idx == -1:
+                        idx = attempt_html.find("<html")
+                    if idx != -1:
+                        attempt_html = attempt_html[idx:]
 
-            # ── Deterministic HTML tag repair ────────────────────────────────
-            try:
-                report_html = _repair_html_tags(report_html)
-            except Exception:
-                pass
-            # ── End HTML repair ──────────────────────────────────────────────
+                # Only triggers if REPORT_MAX_GENERATION_SECONDS was actually
+                # crossed — a rare, "something went wrong" case, not a routine
+                # part of normal report generation. The document is likely
+                # missing many closing tags at once (not just a mismatch —
+                # _repair_html_tags below fixes mismatches, not wholesale
+                # unclosed nesting), so it needs force-closing here first.
+                if truncated:
+                    notice = (
+                        "Analysis was limited to the available generation window — generation took "
+                        "longer than expected. The sections above reflect real, computed statistics; "
+                        "anything past this point was not generated."
+                    )
+                    attempt_html = _finalize_truncated_report_html(attempt_html, notice)
 
-            # ── Section number gap fix ────────────────────────────────────────
-            try:
-                report_html = _fix_section_numbers(report_html)
-            except Exception:
-                pass
-            # ── End section number fix ────────────────────────────────────────
+                # ── Two-pass surgical audit (delegated to helper) ────────────────
+                try:
+                    attempt_html, patches_applied, patches_skipped = _audit_report_html(attempt_html, stats)
+                    if patches_applied or patches_skipped:
+                        yield f"data: {json_mod.dumps({'type': 'audit', 'applied': patches_applied, 'skipped': patches_skipped})}\n\n"
+                except Exception as audit_ex:
+                    print(f"[audit] skipped due to error: {audit_ex}")
+                # ── End audit ────────────────────────────────────────────────────
 
-            # ── Deterministic ranking validator ──────────────────────────────
-            try:
-                report_html = _validate_rankings(report_html, stats)
-            except Exception:
-                pass
-            # ── End ranking validator ─────────────────────────────────────────
+                # ── Deterministic HTML tag repair ────────────────────────────────
+                try:
+                    attempt_html = _repair_html_tags(attempt_html)
+                except Exception:
+                    pass
+                # ── End HTML repair ──────────────────────────────────────────────
 
-            # ── Segment completeness safety net ──────────────────────────────
-            try:
-                report_html = _validate_segment_completeness(report_html, stats)
-            except Exception:
-                pass
-            # ── End segment completeness ─────────────────────────────────────
+                # ── Corrupted list-item repair (empty/unclosed <li>, text-merge signature) ──
+                try:
+                    attempt_html, li_repair_warnings = _repair_corrupted_list_items(attempt_html)
+                    if li_repair_warnings:
+                        print(f"[report] list-item repair: {li_repair_warnings}")
+                        yield f"data: {json_mod.dumps({'type': 'audit', 'applied': li_repair_warnings, 'skipped': []})}\n\n"
+                except Exception as li_repair_ex:
+                    print(f"[list-item repair] skipped due to error: {li_repair_ex}")
+                # ── End corrupted list-item repair ───────────────────────────────
+
+                # ── Section number gap fix ────────────────────────────────────────
+                try:
+                    attempt_html = _fix_section_numbers(attempt_html)
+                except Exception:
+                    pass
+                # ── End section number fix ────────────────────────────────────────
+
+                # ── Deterministic ranking validator ──────────────────────────────
+                try:
+                    attempt_html = _validate_rankings(attempt_html, stats)
+                except Exception:
+                    pass
+                # ── End ranking validator ─────────────────────────────────────────
+
+                # ── Segment completeness safety net ──────────────────────────────
+                try:
+                    attempt_html = _validate_segment_completeness(attempt_html, stats)
+                except Exception:
+                    pass
+                # ── End segment completeness ─────────────────────────────────────
+
+                report_html = attempt_html
+
+                # ── Hard quality gate — runs LAST, after every repair pass had
+                # its chance to fix what it could. A truncated (timeout) report
+                # is never subject to rejection/retry: it already represents a
+                # deliberate best-effort partial result, and retrying would
+                # just spend another full generation window on the same
+                # underlying slowness that caused the timeout in the first
+                # place. ─────────────────────────────────────────────────────
+                if truncated:
+                    rejection_reasons = []
+                    break
+                rejection_reasons = _validate_report_quality(report_html)
+                if not rejection_reasons:
+                    break
+                print(f"[report] attempt {attempt_num}/{MAX_GENERATION_ATTEMPTS} REJECTED: {rejection_reasons}")
+            # ── End generation attempt loop ───────────────────────────────────
 
             # Explicit status, not an implicit side effect of a boolean the
-            # caller might not check. A partial/timeout-finalized report is a
-            # materially different outcome from a clean completion and must
-            # be tracked as one — including NOT silently consuming the same
-            # report_count credit a full report does. This matters most on
-            # Free plan with a small report allowance: a cut-short result
-            # burning someone's only credit erodes trust even if the partial
-            # content is genuinely useful.
-            report_status = "partial_timeout" if truncated else "complete"
+            # caller might not check. A partial/timeout-finalized report and a
+            # rejected report are both materially different outcomes from a
+            # clean completion and must be tracked as such — including NOT
+            # silently consuming the same report_count credit a full report
+            # does. This matters most on Free plan with a small report
+            # allowance: a cut-short or rejected result burning someone's only
+            # credit erodes trust even if some of the content is useful.
+            if truncated:
+                report_status = "partial_timeout"
+            elif rejection_reasons:
+                report_status = "rejected"
+            else:
+                report_status = "complete"
 
             if report_status == "complete":
                 increment_usage_count(user_id, "report_count")
-            else:
+            elif report_status == "partial_timeout":
                 # NOTE: this requires a `partial_report_count` column on the
                 # Supabase `profiles` table. If that column doesn't exist yet,
                 # this PATCH fails and is caught/logged by increment_usage_count
@@ -3386,11 +3570,14 @@ Generate the complete Data Intelligence Report HTML page now. Remember: ONLY out
                 # added (a schema change outside what this code can do).
                 increment_usage_count(user_id, "partial_report_count")
                 print(f"[report] PARTIAL_TIMEOUT for user_id={user_id}: hit REPORT_MAX_GENERATION_SECONDS={REPORT_MAX_GENERATION_SECONDS}s — report_count NOT incremented, partial_report_count incremented instead")
+            else:
+                print(f"[report] REJECTED for user_id={user_id} after {MAX_GENERATION_ATTEMPTS} attempt(s): {rejection_reasons} — report_count NOT incremented")
 
             # Send the final audited HTML as a single payload — this is what
             # the frontend must render. Never render raw chunk content since
             # chunks were sent before the audit pass ran.
-            yield f"data: {json_mod.dumps({'type': 'final_html', 'html': report_html, 'rows_analyzed': rows_analyzed, 'cols_analyzed': cols_analyzed, 'report_status': report_status})}\n\n"
+            yield f"data: {json_mod.dumps({'type': 'final_html', 'html': report_html, 'rows_analyzed': rows_analyzed, 'cols_analyzed': cols_analyzed, 'report_status': report_status, 'rejection_reasons': rejection_reasons})}\n\n"
+
 
         except Exception as e:
             import traceback
@@ -3458,7 +3645,7 @@ async def analyze_report(
         if was_sampled:
             stats["sampling_note"] = sampling_note
 
-        context_block = f"\n\nUSER STEERING INSTRUCTIONS (apply these as filters/focus for the entire report — if the user asks to focus on a specific product, category, time period, or to exclude something, honor that throughout every section rather than analyzing the full dataset): {dataset_context}" if dataset_context else ""
+        context_block = _build_steering_block(dataset_context, stats)
         if sampling_note:
             context_block = f"\n\nSAMPLING NOTE: {sampling_note}" + context_block
         hard_constraints = _build_hard_constraints(stats)
@@ -3497,47 +3684,66 @@ async def analyze_report(
 
 Generate the complete Data Intelligence Report HTML page now. Remember: ONLY output the HTML document, nothing else."""
 
-        try:
-            message = client.messages.create(
-                model="claude-sonnet-4-5",
-                max_tokens=20000,
-                system=REPORT_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": user_message}]
-            )
-            report_html = message.content[0].text.strip()
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Claude API error: {str(e)}")
+        MAX_GENERATION_ATTEMPTS = 2
+        rejection_reasons: list[str] = []
+        patches_applied = []
+        for attempt_num in range(1, MAX_GENERATION_ATTEMPTS + 1):
+            try:
+                message = client.messages.create(
+                    model="claude-sonnet-4-5",
+                    max_tokens=20000,
+                    system=REPORT_SYSTEM_PROMPT,
+                    messages=[{"role": "user", "content": user_message}]
+                )
+                report_html = message.content[0].text.strip()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Claude API error: {str(e)}")
 
-        if report_html.startswith("```"):
-            report_html = re.sub(r'^```[a-z]*\n?', '', report_html)
-            report_html = re.sub(r'\n?```$', '', report_html)
-            report_html = report_html.strip()
+            if report_html.startswith("```"):
+                report_html = re.sub(r'^```[a-z]*\n?', '', report_html)
+                report_html = re.sub(r'\n?```$', '', report_html)
+                report_html = report_html.strip()
 
-        if not report_html.startswith("<!DOCTYPE") and not report_html.startswith("<html"):
-            idx = report_html.find("<!DOCTYPE")
-            if idx == -1:
-                idx = report_html.find("<html")
-            if idx != -1:
-                report_html = report_html[idx:]
-            else:
-                raise HTTPException(status_code=500, detail="Report generation produced invalid HTML. Please try again.")
+            if not report_html.startswith("<!DOCTYPE") and not report_html.startswith("<html"):
+                idx = report_html.find("<!DOCTYPE")
+                if idx == -1:
+                    idx = report_html.find("<html")
+                if idx != -1:
+                    report_html = report_html[idx:]
+                else:
+                    raise HTTPException(status_code=500, detail="Report generation produced invalid HTML. Please try again.")
 
-        # Apply the same surgical audit as the streaming endpoint
-        report_html, patches_applied, patches_skipped = _audit_report_html(report_html, stats)
-        if patches_applied:
-            print(f"[analyze-report fallback] audit applied {len(patches_applied)} patch(es)")
-        report_html = _repair_html_tags(report_html)
-        report_html = _fix_section_numbers(report_html)
-        report_html = _validate_rankings(report_html, stats)
-        report_html = _validate_segment_completeness(report_html, stats)
+            # Apply the same surgical audit as the streaming endpoint
+            report_html, patches_applied, patches_skipped = _audit_report_html(report_html, stats)
+            if patches_applied:
+                print(f"[analyze-report fallback] audit applied {len(patches_applied)} patch(es)")
+            report_html = _repair_html_tags(report_html)
+            report_html, li_repair_warnings = _repair_corrupted_list_items(report_html)
+            if li_repair_warnings:
+                print(f"[analyze-report fallback] list-item repair: {li_repair_warnings}")
+            report_html = _fix_section_numbers(report_html)
+            report_html = _validate_rankings(report_html, stats)
+            report_html = _validate_segment_completeness(report_html, stats)
+
+            # Hard quality gate — same criteria as the streaming endpoint.
+            # Runs LAST, after every repair pass had its chance to fix what
+            # it could.
+            rejection_reasons = _validate_report_quality(report_html)
+            if not rejection_reasons:
+                break
+            print(f"[analyze-report fallback] attempt {attempt_num}/{MAX_GENERATION_ATTEMPTS} REJECTED: {rejection_reasons}")
 
         # This fallback has no generation-timeout concept of its own — it's
-        # a single blocking call with no streaming loop to cut short — so
-        # every successful return here is unambiguously "complete", never
-        # "partial_timeout". Still explicit so the frontend gets the same
-        # field shape regardless of which endpoint actually served the
-        # request.
-        increment_usage_count(user_id, "report_count")
+        # a single blocking call with no streaming loop to cut short — so the
+        # only two outcomes here are "complete" or "rejected" (never
+        # "partial_timeout"). A rejected report does NOT consume a
+        # report_count credit, same principle as the streaming endpoint.
+        report_status = "rejected" if rejection_reasons else "complete"
+        if report_status == "complete":
+            increment_usage_count(user_id, "report_count")
+        else:
+            print(f"[analyze-report fallback] REJECTED for user_id={user_id} after {MAX_GENERATION_ATTEMPTS} attempt(s): {rejection_reasons} — report_count NOT incremented")
+
 
         return {
             "report_html": report_html,
@@ -3545,7 +3751,8 @@ Generate the complete Data Intelligence Report HTML page now. Remember: ONLY out
             "audit_patches_applied": len(patches_applied),
             "rows_analyzed": len(df),
             "cols_analyzed": len(df.columns),
-            "report_status": "complete"
+            "report_status": report_status,
+            "rejection_reasons": rejection_reasons
         }
 
     except HTTPException:
@@ -4559,6 +4766,14 @@ _RISKY_DUPLICATE_KEY_FRACTION: float = 0.2
 
 _ID_NAME_PATTERN = re.compile(
     r'(?:^|[_\s])(id|sku|code|zip|zipcode|postal|account|acct|upc|isbn)(?:[_\s]|$)',
+    re.IGNORECASE,
+)
+# Catches date/time-label columns (week, month, quarter, year, date, period,
+# day) so they're never framed as ordinary segment "drivers" — a raw time
+# label with no computed time_series stats behind it is exactly the kind of
+# thing that invites the model to invent a trend it has no real numbers for.
+_TIME_LIKE_NAME_PATTERN = re.compile(
+    r'(?:^|_)(week|month|quarter|year|date|period|day)(?:_|$)',
     re.IGNORECASE,
 )
 # Catches human-style compound names like "Account Number", "Invoice Number",
