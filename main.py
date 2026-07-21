@@ -1660,11 +1660,19 @@ Quality guardrails to embed in the prompt:
 
     if revenue_cols:
         guardrails += f"""
-- When citing financial impact, only use computed totals from {', '.join(revenue_cols[:2])}. Do not extrapolate, annualize, or estimate recovery amounts beyond what is directly in the segment data."""
+- When citing financial impact, only use computed totals from {', '.join(revenue_cols[:2])}. Do not extrapolate, annualize, or estimate recovery amounts beyond what is directly in the segment data.
+- If a computed revenue figure exists, call it revenue; do not show your own arithmetic or combine separate fields to create a new revenue/profit/margin formula.
+- Use exact field names for financial metrics. For example, call gross_margin_dollars "gross_margin_dollars" or "realized gross margin on sold units"; do not rename it "profit" or "lost profit" unless the data contains that exact computed field."""
 
     if date_cols:
         guardrails += f"""
-- Only describe time-based trends if time_series statistics were explicitly computed. Do not infer trends from week/date labels alone."""
+- Only describe time-based trends if time_series statistics were explicitly computed. Do not infer trends from week/date labels alone.
+- Leave time entirely out of the report objective unless the user's main question explicitly asks for time analysis and computed time_series statistics are available."""
+
+    guardrails += """
+- Use association language only. Say patterns "coincide with" or "are associated with" outcomes; do not say a field, segment, or decision "causes" an outcome unless the dataset contains causal experiment evidence.
+- Do not introduce unrequested ratios, rates, conversion metrics, retention metrics, or lift calculations unless those exact values are computed in the available statistics.
+- Do not frame findings as conversion or retention analysis unless conversion/retention statistics are explicitly part of this dataset."""
 
     user_message = f"""You are helping a user write a focused steering prompt for a data intelligence report generator.
 
@@ -1675,11 +1683,33 @@ Main question: {req.q2}
 {f"Exclude or deprioritize: {req.q3}" if req.q3 else ""}
 {guardrails}
 
-Write a concise steering prompt (3-5 sentences) the user will paste into their report generator before running it. The prompt should:
-1. State what to focus on based on their question
-2. Reference the relevant columns by name where applicable
-3. Embed the quality guardrails naturally so the report stays accurate
-Output the prompt text only — no preamble, no explanation."""
+Write a structured steering prompt the user will paste into their report generator before running it.
+
+Use exactly this section format:
+
+REPORT OBJECTIVE
+One concise paragraph stating what the report should focus on.
+
+KEY QUESTIONS
+1. Three to five numbered questions the report should answer.
+
+METRICS AND FIELDS TO PRIORITIZE
+- Bullet list of relevant columns and computed metrics.
+
+EVIDENCE RULES
+- Bullet list of factual guardrails, including using only computed statistics.
+
+LABELING RULES
+- Bullet list explaining how to label confirmed findings versus hypotheses/recommendations.
+
+DO NOT DO
+- Bullet list of prohibited unsupported claims, extrapolations, or irrelevant metric usage.
+
+Rules:
+- Do not collapse the output into one paragraph.
+- Do not add a preamble or explanation.
+- Do not use markdown fences.
+- Keep the whole prompt concise, but preserve the section headers exactly."""
 
     try:
         response = client.messages.create(
@@ -1688,6 +1718,17 @@ Output the prompt text only — no preamble, no explanation."""
             messages=[{"role": "user", "content": user_message}]
         )
         prompt_text = response.content[0].text.strip()
+        section_headers = [
+            "REPORT OBJECTIVE",
+            "KEY QUESTIONS",
+            "METRICS AND FIELDS TO PRIORITIZE",
+            "EVIDENCE RULES",
+            "LABELING RULES",
+            "DO NOT DO",
+        ]
+        for header in section_headers:
+            prompt_text = re.sub(rf"\s*({re.escape(header)})\s*", r"\n\n\1\n", prompt_text)
+        prompt_text = re.sub(r"\n{3,}", "\n\n", prompt_text).strip()
         return {"prompt": prompt_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
