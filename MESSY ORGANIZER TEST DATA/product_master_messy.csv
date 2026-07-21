@@ -1,0 +1,8 @@
+sku,product_name,category,unit_price,unit cost,active_flag
+SKU-001,Aero Mug,Home Goods,$14.99,6.1,Y
+SKU-002,Trail Pack,Outdoor,$59.0,32.5,1
+SKU-003,Glow Serum,Beauty,$28.0,9.7,Y
+SKU-004,USB Hub,Electronics,34.5,14.2,1
+SKU-005,Desk Lamp,Home Goods,$42.0,18.0,true
+SKU-006,Rain Shell,Outdoor,$88.0,51.0,1
+sku-004,USB hub,Electronic,34.50,14.2,yes

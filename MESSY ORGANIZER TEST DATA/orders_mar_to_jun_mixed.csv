@@ -1,0 +1,296 @@
+order id,customer,sku,product,order_date,channel,region,units_sold,unit_price,discount_rate,stockout_flag,lost_revenue_estimate,gross_margin_dollars,notes
+O-00621,C0146,SKU-004,USB Hub,04/23/2025,Amazon,Mid-West,7,34.5,0.05,0,0,142.1,
+O-00622,C0159,sku-006,Rain Shell,06/29/2025,Wholesale ,West,4,88.0,0.1,1,352.0,148.0,duplicate?
+O-00623,C0119,SKU-006,Rain Shell,01/28/2025,Wholesale ,Midwest,5,$88.00,,0,0,185.0,manual adjustment
+O-00624,0155,sku-004,USB Hub,01/30/2025,Wholesale,Midwest,5,$34.50,,0,0,101.5,promo period
+O-00625,c0098,SKU-001,Aero Mug,2025/02/24,Wholesale ,north east,5,14.99,,0,0,44.45,late upload
+O-00626,C0018,SKU-003,Glow Serum,04/26/2025,Wholesale,Northeast,3,28.0,0.15,0,0,54.9,manual adjustment
+O-00627,C0077,SKU-002,Trail Pack,2025-06-28,Retail Store,South,5,59.0,0.05,0,0,132.5,late upload
+O-00628,C0083,SKU-006,Rain Shell,01/04/2025,Amazon,Mid-West,8,88.0,0.2,0,0,296.0,duplicate?
+O-00629,C0033,SKU-006,Rain Shell,02/18/2025,Retail Store,WEST,0,88.0,0.1,1,88.0,0,manual adjustment
+O-00630,C0094,SKU-001,Aero Mug,05/09/2025,Wholesale ,Mid-West,5,14.99,0.15,0,0,44.45,duplicate?
+O-00631,C0134,SKU-003,Glow Serum,2025/05/22,Wholesale ,north east,4,28.0,0.05,0,0,73.2,
+O-00632,C0023,SKU-001,Aero Mug,2025/06/07,Amazon,,4,14.99,0,0,0,35.56,manual adjustment
+O-00633,C0108,SKU-002,Trail Pack,05/01/2025,Wholesale ,Mid-West,,59.0,0.1,0,0,106.0,late upload
+O-00634,0130,SKU-003,Glow Serum,2025-03-20,Shopify,Mid-West,6,$28.00,0.15,0,0,109.8,manual adjustment
+O-00635,C0133,SKU-006,Rain Shell,03/03/2025,Shopify,Mid-West,2,88.0,10%,0,0,74.0,late upload
+O-00636,C0104,SKU-003,Glow Serum,2025/03/01,Wholesale ,north east,2,28.0,10%,0,0,36.6,manual adjustment
+O-00637,C0053,SKU-001,Aero Mug,2025/01/08,Wholesale ,Northeast,5,14.99,0.05,0,0,44.45,duplicate?
+O-00638,C0092,SKU-002,Trail Pack,03/18/2025,shopify,Northeast,5,59.0,0.1,0,0,132.5,
+O-00639,C0149,SKU-001,Aero Mug,03/14/2025,Retail Store,Mid-West,7,14.99,0.05,0,0,62.23,duplicate?
+O-00640,C0019,SKU-004,USB Hub,02/23/2025,Wholesale,West,6,34.5,0,0,0,121.8,promo period
+O-00641,C0156,SKU-001,Aero Mug,2025/02/10,Shopify,Northeast,5,14.99,0,0,0,44.45,late upload
+O-00642,C0094,SKU-001,Aero Mug,2025-03-25,shopify,north east,5,14.99,0,0,0,44.45,manual adjustment
+O-00643,C0142,SKU-006,Rain Shell,2025/02/19,shopify,Mid-West,3,88.0,10%,0,0,111.0,promo period
+O-00644,0080,SKU-002,Trail Pack,04/21/2025,Amazon,Mid-West,7,59.0,,0,0,185.5,manual adjustment
+O-00645,C0017,SKU-004,USB Hub,2025/03/17,AMZ,Mid-West,4,34.5,10%,0,0,81.2,manual adjustment
+O-00646,0110,SKU-002,Trail Pack,2025-02-25,Shopify,WEST,4,59.0,0,0,0,106.0,late upload
+O-00647,0120,SKU-005,Desk Lamp,03/14/2025,Amazon,Mid-West,5,42.0,10%,0,0,120.0,manual adjustment
+O-00648,c0051,SKU-002,Trail Pack,05/08/2025,Wholesale,WEST,0,59.0,,1,59.0,0,manual adjustment
+O-00649,0005,SKU-006,RAIN SHELL,2025/03/14,Shopify,WEST,4,$88.00,,1,176.0,148.0,duplicate?
+O-00650,c0078,SKU-003,Glow Serum,2025-04-13,Wholesale ,north east,1,28.0,0.2,0,0,18.3,
+O-00651,C0096,SKU-005,Desk Lamp,2025-01-27,Wholesale,South,5,42.0,0.05,0,0,120.0,manual adjustment
+O-00652,C0138,sku-001,Aero Mug,03/08/2025,Amazon,north east,4,14.99,0,0,0,35.56,duplicate?
+O-00653,0070,SKU-006,Rain Shell,03/23/2025,,South,4,88.0,0.05,0,0,148.0,duplicate?
+O-00654,C0126,SKU-003,Glow Serum,02/27/2025,Retail Store,Midwest,4,$28.00,,0,0,73.2,duplicate?
+O-00655,C0016,SKU-002,Trail Pack,2025/05/05,AMZ,north east,5,59.0,0.1,0,0,132.5,promo period
+O-00656,C0028,SKU-002,Trail Pack,04/09/2025,Retail Store,South,4,59.0,0.2,1,295.0,106.0,promo period
+O-00657,C0027,sku-002,Trail Pack,04/28/2025,AMZ,north east,3,59.0,0,1,354.0,79.5,duplicate?
+O-00658,0055,SKU-002,Trail Pack,2025-05-11,Wholesale ,Mid-West,4,59.0,10%,0,0,106.0,late upload
+O-00659,C0153,SKU-003,Glow Serum,2025-06-15,shopify,Midwest,1,$28.00,0,0,0,18.3,late upload
+O-00660,C0159,SKU-006,Rain Shell,04/11/2025,,Midwest,3,88.0,10%,0,0,111.0,manual adjustment
+O-00661,C0153,SKU-003,Glow Serum,2025/03/20,Amazon,West,3,28.0,,0,0,54.9,late upload
+O-00662,C0004,SKU-006,Rain Shell,2025/01/06,Shopify,WEST,3,88.0,0.2,0,0,111.0,duplicate?
+O-00663,C0064,SKU-004,USB Hub,2025-02-28,Amazon,north east,6,34.5,0.15,0,0,121.8,duplicate?
+O-00664,0090,sku-005,Desk Lamp,2025/03/06,AMZ,,6,42.0,,0,0,144.0,
+O-00665,C0038,SKU-004,USB Hub,01/08/2025,Retail Store,South,5,34.5,,0,0,101.5,
+O-00666,C0071,SKU-006,Rain Shell,05/15/2025,Wholesale ,Mid-West,1,88.0,,0,0,37.0,late upload
+O-00667,C0011,SKU-005,Desk Lamp,2025-04-27,Shopify,,2,42.0,10%,0,0,48.0,late upload
+O-00668,C0134,SKU-003,Glow Serum,03/19/2025,Shopify,Midwest,3,28.0,0.05,0,0,54.9,
+O-00669,C0126,SKU-003,Glow Serum,2025/03/06,Wholesale,South,5,28.0,0,0,0,91.5,late upload
+O-00670,c0111,SKU-005,Desk Lamp,2025/02/26,Wholesale ,Mid-West,4,42.0,0.15,0,0,96.0,manual adjustment
+O-00671,C0078,SKU-005,Desk Lamp,05/29/2025,Retail Store,north east,3,42.0,0.2,0,0,72.0,duplicate?
+O-00672,0140,SKU-002,Trail Pack,2025/01/25,AMZ,,6,59.0,10%,0,0,159.0,duplicate?
+O-00673,C0119,SKU-001,Aero Mug,2025/02/05,AMZ,West,4,14.99,0,0,0,35.56,manual adjustment
+O-00674,C0014,SKU-004,USB Hub,2025-04-29,Amazon,Northeast,3,34.5,0,0,0,60.9,
+O-00675,C0086,SKU-005,Desk Lamp,2025/01/16,Shopify,Midwest,5,42.0,0.2,0,0,120.0,duplicate?
+O-00676,0035,SKU-002,Trail Pack,03/19/2025,Retail Store,South,4,59.0,0.05,0,0,106.0,
+O-00677,c0134,SKU-001,Aero Mug,2025-04-11,Retail Store,north east,4,14.99,,1,29.98,35.56,duplicate?
+O-00678,C0038,SKU-006,Rain Shell,2025-06-18,,,4,88.0,0.05,1,704.0,148.0,manual adjustment
+O-00679,c0071,SKU-004,USB Hub,2025-02-07,shopify,Northeast,1,34.5,10%,0,0,20.3,promo period
+O-00680,C0114,SKU-001,Aero Mug,2025-02-05,AMZ,Midwest,6,14.99,0.2,0,0,53.34,duplicate?
+O-00681,C0132,SKU-001,Aero Mug,2025/04/28,shopify,Mid-West,4,14.99,0.2,0,0,35.56,duplicate?
+O-00682,C0097,SKU-004,USB Hub,05/28/2025,Wholesale,WEST,5,34.5,0.05,0,0,101.5,promo period
+O-00683,C0159,SKU-004,USB Hub,01/25/2025,Retail Store,Midwest,4,34.5,0.1,0,0,81.2,duplicate?
+O-00684,c0108,SKU-001,Aero Mug,01/30/2025,Shopify,West,4,14.99,0.15,1,104.93,35.56,late upload
+O-00685,C0147,SKU-005,Desk Lamp,2025-02-27,Amazon,Northeast,4,42.0,0.15,0,0,96.0,late upload
+O-00686,C0009,SKU-002,Trail Pack,2025/04/15,,Midwest,5,59.0,0.2,0,0,132.5,duplicate?
+O-00687,C0129,SKU-003,Glow Serum,2025-04-23,Wholesale,north east,1,28.0,0,0,0,18.3,
+O-00688,C0154,SKU-005,Desk Lamp,2025-03-16,Wholesale,north east,7,42.0,0.1,0,0,168.0,promo period
+O-00689,C0157,SKU-005,Desk Lamp,2025-05-30,Shopify,WEST,2,42.0,0,0,0,48.0,
+O-00690,C0036,SKU-002,Trail Pack,2025/06/19,Shopify,WEST,6,59.0,0.2,0,0,159.0,promo period
+O-00691,c0157,SKU-001,Aero Mug,01/27/2025,,north east,5,14.99,0,0,0,44.45,late upload
+O-00692,C0006,SKU-001,Aero Mug,2025-05-17,,Northeast,2,14.99,0.1,1,44.97,17.78,duplicate?
+O-00693,0110,SKU-005,Desk Lamp,2025-04-01,Amazon,Northeast,5,42.0,0.2,0,0,120.0,promo period
+O-00694,C0146,SKU-001,Aero Mug,2025-03-05,shopify,Northeast,5,14.99,0,0,0,44.45,late upload
+O-00695,0075,SKU-002,Trail Pack,2025/01/20,AMZ,Midwest,2,59.0,0,1,354.0,53.0,promo period
+O-00696,0075,SKU-006,Rain Shell,03/23/2025,,north east,2,88.0,0.15,1,352.0,74.0,manual adjustment
+O-00697,C0142,SKU-002,Trail Pack,2025-03-02,Shopify,,6,59.0,0,0,0,159.0,promo period
+O-00698,C0099,SKU-003,Glow Serum,01/16/2025,Wholesale ,,6,28.0,0,0,0,109.8,late upload
+O-00699,C0111,SKU-005,Desk Lamp,01/07/2025,Retail Store,Northeast,5,42.0,0.2,0,0,120.0,duplicate?
+O-00700,0110,SKU-006,Rain Shell,01/28/2025,,Mid-West,4,88.0,0,0,0,148.0,promo period
+O-00701,C0067,SKU-002,Trail Pack,02/03/2025,Amazon,Midwest,6,59.0,0.1,0,0,159.0,promo period
+O-00702,C0102,SKU-001,Aero Mug,2025/03/10,Shopify,South,3,14.99,0.2,0,0,26.67,manual adjustment
+O-00703,C0046,SKU-004,USB Hub,2025/05/03,Amazon,north east,1,34.5,0.2,0,0,20.3,
+O-00704,C0113,SKU-002,Trail Pack,2025-03-08,Shopify,Midwest,4,$59.00,0.15,0,0,106.0,promo period
+O-00705,c0113,SKU-005,Desk Lamp,2025/03/07,Shopify,Midwest,2,$42.00,0.15,0,0,48.0,duplicate?
+O-00706,C0029,SKU-005,Desk Lamp,2025-03-25,Wholesale ,north east,6,42.0,0.1,1,252.0,144.0,manual adjustment
+O-00707,0105,SKU-006,Rain Shell,2025/02/11,Shopify,South,0,88.0,0,1,528.0,0,late upload
+O-00708,C0097,SKU-005,Desk Lamp,2025-04-08,Wholesale ,South,7,42.0,0.05,1,42.0,168.0,promo period
+O-00709,C0121,SKU-006,Rain Shell,2025-03-04,,WEST,1,$88.00,0.15,1,352.0,37.0,duplicate?
+O-00710,0105,SKU-003,Glow Serum,04/03/2025,Retail Store,West,3,28.0,0,1,196.0,54.9,promo period
+O-00711,C0036,SKU-005,Desk Lamp,2025/04/15,Retail Store,West,3,$42.00,0,0,0,72.0,
+O-00712,C0108,sku-003,Glow Serum,2025/01/26,Wholesale,South,5,28.0,,0,0,91.5,duplicate?
+O-00713,C0109,SKU-003,Glow Serum,2025/01/31,Amazon,Northeast,6,28.0,0.15,0,0,109.8,duplicate?
+O-00714,0105,SKU-006,Rain Shell,2025/03/16,Amazon,West,6,88.0,10%,0,0,222.0,manual adjustment
+O-00715,C0117,SKU-004,USB Hub,2025/01/25,Wholesale ,north east,3,34.5,0.15,0,0,60.9,late upload
+O-00716,C0037,SKU-001,Aero Mug,2025-04-21,AMZ,north east,5,14.99,0.1,0,0,44.45,duplicate?
+O-00717,C0113,SKU-002,Trail Pack,2025/03/01,Wholesale,Northeast,5,$59.00,0,0,0,132.5,promo period
+O-00718,C0138,SKU-002,Trail Pack,2025/04/05,,West,2,59.0,0,1,118.0,53.0,
+O-00719,C0114,SKU-004,USB Hub,2025-06-21,Amazon,WEST,3,34.5,0.15,0,0,60.9,duplicate?
+O-00720,C0132,SKU-006,Rain Shell,01/10/2025,Retail Store,Northeast,4,88.0,0.2,0,0,148.0,late upload
+O-00721,C0036,SKU-005,Desk Lamp,05/01/2025,Wholesale,Midwest,0,$42.00,0.15,0,0,0,promo period
+O-00722,0055,SKU-001,AERO MUG,2025/05/23,shopify,Mid-West,7,14.99,,0,0,62.23,manual adjustment
+O-00723,C0124,SKU-005,Desk Lamp,2025/03/16,AMZ,,3,42.0,0.1,0,0,72.0,manual adjustment
+O-00724,C0108,SKU-004,USB Hub,01/30/2025,Wholesale ,West,2,34.5,10%,0,0,40.6,duplicate?
+O-00725,c0154,SKU-004,USB Hub,04/15/2025,Wholesale ,Mid-West,3,34.5,0.1,0,0,60.9,manual adjustment
+O-00726,C0014,sku-003,Glow Serum,2025-03-28,Wholesale,Midwest,3,$28.00,0.1,0,0,54.9,promo period
+O-00727,C0157,SKU-003,Glow Serum,2025/04/08,Amazon,Northeast,5,28.0,0,0,0,91.5,late upload
+O-00728,C0041,SKU-005,Desk Lamp,2025-03-16,Retail Store,Northeast,5,$42.00,0.1,0,0,120.0,promo period
+O-00729,C0027,SKU-005,Desk Lamp,01/07/2025,Amazon,Mid-West,2,42.0,0.15,0,0,48.0,manual adjustment
+O-00730,c0022,SKU-001,Aero Mug,2025-01-06,Amazon,Mid-West,5,14.99,10%,1,74.95,44.45,manual adjustment
+O-00731,C0109,SKU-005,Desk Lamp,03/09/2025,Amazon,Midwest,3,42.0,0,0,0,72.0,duplicate?
+O-00732,c0073,SKU-006,Rain Shell,04/08/2025,Amazon,,2,88.0,0.1,0,0,74.0,duplicate?
+O-00733,0060,SKU-004,USB Hub,2025-02-06,Retail Store,,2,$34.50,0.2,0,0,40.6,duplicate?
+O-00734,C0158,SKU-004,USB Hub,01/16/2025,Wholesale,Northeast,5,34.5,0.1,0,0,101.5,duplicate?
+O-00735,C0002,SKU-003,Glow Serum,03/22/2025,Amazon,South,2,$28.00,,0,0,36.6,late upload
+O-00736,C0004,SKU-002,Trail Pack,02/12/2025,,West,0,59.0,0,0,0,0,late upload
+O-00737,C0141,SKU-004,USB Hub,2025/06/23,Wholesale,West,2,34.5,0.15,0,0,40.6,promo period
+O-00738,C0096,SKU-005,Desk Lamp,2025-04-29,Wholesale,,,42.0,,0,0,96.0,late upload
+O-00739,C0121,SKU-001,Aero Mug,2025/06/27,,West,4,14.99,0.1,0,0,35.56,late upload
+O-00740,C0089,SKU-006,Rain Shell,2025/03/12,shopify,WEST,3,88.0,0.1,1,440.0,111.0,promo period
+O-00741,C0139,SKU-006,Rain Shell,2025/03/13,Wholesale ,WEST,3,88.0,0.1,1,440.0,111.0,promo period
+O-00742,C0122,SKU-002,Trail Pack,2025-02-25,,Northeast,3,59.0,0.1,1,59.0,79.5,late upload
+O-00743,C0131,SKU-004,USB Hub,03/03/2025,AMZ,north east,1,34.5,0,0,0,20.3,
+O-00744,0155,SKU-002,Trail Pack,02/06/2025,Amazon,Mid-West,5,59.0,0.15,0,0,132.5,manual adjustment
+O-00745,0120,SKU-006,Rain Shell,2025-04-08,,WEST,2,$88.00,0.1,0,0,74.0,manual adjustment
+O-00746,0085,SKU-001,AERO MUG,05/09/2025,,Mid-West,5,14.99,0.15,0,0,44.45,manual adjustment
+O-00747,C0071,SKU-006,Rain Shell,2025/06/05,Amazon,Northeast,6,88.0,,1,264.0,222.0,late upload
+O-00748,C0034,SKU-001,Aero Mug,2025/01/15,shopify,Midwest,4,14.99,0,0,0,35.56,manual adjustment
+O-00749,c0082,SKU-006,Rain Shell,2025/05/13,Shopify,South,6,88.0,0.2,0,0,222.0,late upload
+O-00750,C0069,SKU-001,Aero Mug,2025/03/12,Shopify,north east,9,14.99,0,0,0,80.01,manual adjustment
+O-00751,0120,SKU-005,Desk Lamp,01/30/2025,Shopify,West,4,42.0,0,0,0,96.0,manual adjustment
+O-00752,C0118,SKU-001,Aero Mug,2025-03-20,Wholesale,north east,3,14.99,0.1,0,0,26.67,late upload
+O-00753,C0072,SKU-002,Trail Pack,02/21/2025,Amazon,,2,59.0,0.15,0,0,53.0,promo period
+O-00754,C0116,SKU-006,Rain Shell,2025/01/10,Retail Store,Mid-West,3,88.0,0.05,0,0,111.0,manual adjustment
+O-00755,C0054,SKU-003,Glow Serum,01/24/2025,Shopify,South,3,28.0,0.15,0,0,54.9,duplicate?
+O-00756,C0036,SKU-004,USB HUB,2025/05/25,Amazon,WEST,1,$34.50,0.2,0,0,20.3,duplicate?
+O-00757,C0122,SKU-003,Glow Serum,03/20/2025,,Mid-West,1,28.0,0.2,0,0,18.3,late upload
+O-00758,0065,SKU-006,Rain Shell,2025-05-04,Amazon,Mid-West,7,88.0,0.2,0,0,259.0,promo period
+O-00759,C0103,SKU-005,Desk Lamp,2025-05-26,Amazon,north east,6,42.0,0.1,0,0,144.0,manual adjustment
+O-00760,C0118,SKU-004,USB Hub,2025-06-18,Wholesale,Midwest,4,34.5,0,0,0,81.2,late upload
+O-00761,0040,SKU-006,Rain Shell,2025-03-30,,Mid-West,0,88.0,0.05,1,176.0,0,duplicate?
+O-00762,C0033,SKU-003,Glow Serum,2025/04/13,Wholesale ,Mid-West,2,28.0,0.05,0,0,36.6,promo period
+O-00763,C0007,sku-002,Trail Pack,03/29/2025,Amazon,Midwest,4,59.0,0.2,0,0,106.0,late upload
+O-00764,C0078,SKU-004,USB Hub,2025/06/17,,Northeast,3,34.5,10%,0,0,60.9,late upload
+O-00765,C0042,SKU-004,USB Hub,2025-03-30,Wholesale,WEST,2,34.5,0,0,0,40.6,duplicate?
+O-00766,C0003,SKU-004,USB Hub,2025/04/19,Amazon,,0,34.5,10%,0,0,0,manual adjustment
+O-00767,C0137,sku-003,Glow Serum,2025/06/22,shopify,Midwest,4,28.0,10%,0,0,73.2,duplicate?
+O-00768,C0112,SKU-001,Aero Mug,2025/02/01,AMZ,north east,4,14.99,0,0,0,35.56,
+O-00769,C0139,SKU-003,Glow Serum,2025-03-18,Wholesale ,Midwest,4,28.0,0.2,1,84.0,73.2,late upload
+O-00770,C0127,SKU-004,USB Hub,2025/04/28,,Northeast,5,34.5,0.2,0,0,101.5,late upload
+O-00771,C0156,SKU-006,Rain Shell,2025-03-28,Wholesale,north east,1,88.0,0,0,0,37.0,
+O-00772,C0111,SKU-001,Aero Mug,2025/03/19,Shopify,WEST,0,14.99,0.15,0,0,0,duplicate?
+O-00773,C0071,SKU-006,Rain Shell,2025-06-04,Wholesale ,Midwest,,88.0,0,0,0,111.0,late upload
+O-00774,C0071,sku-003,Glow Serum,2025-01-25,shopify,,2,28.0,0.2,0,0,36.6,manual adjustment
+O-00775,C0139,SKU-004,USB Hub,03/30/2025,Retail Store,West,1,34.5,0.2,0,0,20.3,
+O-00776,C0147,SKU-001,Aero Mug,01/22/2025,AMZ,,4,$14.99,0.2,0,0,35.56,promo period
+O-00777,0150,SKU-002,Trail Pack,2025/03/14,Wholesale,Mid-West,2,59.0,0,0,0,53.0,
+O-00778,C0102,SKU-002,Trail Pack,2025/05/27,Wholesale ,Mid-West,2,59.0,0,1,295.0,53.0,manual adjustment
+O-00779,C0093,SKU-006,Rain Shell,05/09/2025,,north east,7,88.0,0.2,0,0,259.0,late upload
+O-00780,C0103,SKU-003,Glow Serum,2025/04/29,Wholesale ,Mid-West,6,28.0,0.2,1,112.0,109.8,late upload
+O-00781,C0157,SKU-005,Desk Lamp,01/06/2025,Amazon,WEST,3,42.0,10%,0,0,72.0,duplicate?
+O-00782,C0142,SKU-005,Desk Lamp,2025/04/28,Retail Store,WEST,3,$42.00,0.05,0,0,72.0,
+O-00783,C0053,SKU-005,Desk Lamp,2025/02/15,AMZ,West,2,42.0,0.1,0,0,48.0,
+O-00784,C0002,SKU-006,Rain Shell,05/14/2025,shopify,South,4,88.0,10%,1,88.0,148.0,duplicate?
+O-00785,C0124,SKU-006,Rain Shell,04/04/2025,Wholesale ,South,7,88.0,0,0,0,259.0,promo period
+O-00786,C0029,SKU-006,Rain Shell,2025-06-18,shopify,South,5,88.0,10%,1,704.0,185.0,duplicate?
+O-00787,C0063,SKU-003,GLOW SERUM,2025-06-29,Wholesale,north east,2,28.0,,0,0,36.6,promo period
+O-00788,C0093,SKU-006,Rain Shell,05/26/2025,Wholesale,West,6,88.0,0.05,1,616.0,222.0,manual adjustment
+O-00789,C0059,SKU-001,Aero Mug,2025/03/08,Wholesale ,,5,14.99,0,0,0,44.45,manual adjustment
+O-00790,0040,SKU-005,Desk Lamp,2025-05-14,,West,1,42.0,0.2,0,0,24.0,
+O-00791,C0088,SKU-002,Trail Pack,2025/06/16,Shopify,Midwest,3,59.0,0,0,0,79.5,
+O-00792,c0103,SKU-006,Rain Shell,2025/05/10,Amazon,Northeast,5,88.0,0.2,1,352.0,185.0,manual adjustment
+O-00793,c0047,SKU-006,Rain Shell,2025-02-15,Retail Store,South,7,88.0,,1,440.0,259.0,
+O-00794,C0054,SKU-002,Trail Pack,2025/04/29,Amazon,Midwest,2,59.0,,0,0,53.0,duplicate?
+O-00795,C0051,SKU-001,Aero Mug,05/29/2025,Retail Store,,2,14.99,0,0,0,17.78,duplicate?
+O-00796,C0154,SKU-003,Glow Serum,03/26/2025,shopify,Midwest,3,28.0,0.05,0,0,54.9,promo period
+O-00797,0080,SKU-006,Rain Shell,2025-01-02,Wholesale,South,0,88.0,,0,0,0,
+O-00798,C0114,SKU-003,Glow Serum,2025/02/19,shopify,WEST,6,28.0,0.05,0,0,109.8,manual adjustment
+O-00799,C0157,SKU-002,Trail Pack,2025/02/13,,Mid-West,2,59.0,10%,1,295.0,53.0,duplicate?
+O-00800,C0078,SKU-003,Glow Serum,2025/04/01,Wholesale ,Mid-West,,28.0,0.2,0,0,54.9,
+O-00801,0105,SKU-003,Glow Serum,01/05/2025,shopify,WEST,3,28.0,0.15,0,0,54.9,duplicate?
+O-00802,C0084,SKU-005,Desk Lamp,2025-02-25,Retail Store,West,3,42.0,0.1,0,0,72.0,promo period
+O-00803,C0121,SKU-001,Aero Mug,2025-03-05,Shopify,WEST,4,14.99,,0,0,35.56,manual adjustment
+O-00804,C0029,SKU-004,USB Hub,2025-03-25,shopify,Midwest,2,34.5,0,0,0,40.6,manual adjustment
+O-00805,c0147,SKU-005,Desk Lamp,2025/06/26,AMZ,WEST,4,42.0,0.15,0,0,96.0,late upload
+O-00806,C0048,SKU-003,Glow Serum,04/03/2025,Shopify,West,2,28.0,,0,0,36.6,duplicate?
+O-00807,0125,SKU-001,Aero Mug,01/05/2025,,north east,4,14.99,0.2,0,0,35.56,
+O-00808,0145,SKU-001,Aero Mug,2025/05/17,,Midwest,3,14.99,0,0,0,26.67,duplicate?
+O-00809,C0071,SKU-004,USB Hub,2025/01/19,Wholesale ,Northeast,0,34.5,0.2,0,0,0,promo period
+O-00810,0100,SKU-001,Aero Mug,04/20/2025,,Midwest,5,14.99,0.2,1,89.94,44.45,promo period
+O-00811,0040,SKU-002,Trail Pack,2025/05/17,AMZ,South,4,59.0,0,1,236.0,106.0,late upload
+O-00812,C0052,SKU-003,Glow Serum,2025-03-01,,South,2,28.0,0.15,0,0,36.6,duplicate?
+O-00813,C0054,SKU-004,USB Hub,2025/06/01,Amazon,West,6,34.5,10%,0,0,121.8,duplicate?
+O-00814,0155,SKU-003,Glow Serum,04/17/2025,,north east,4,28.0,0.2,0,0,73.2,
+O-00815,C0002,SKU-004,USB Hub,2025/04/03,shopify,Midwest,4,$34.50,0.2,0,0,81.2,duplicate?
+O-00816,C0121,sku-001,Aero Mug,2025-06-15,Shopify,West,2,14.99,0.15,0,0,17.78,duplicate?
+O-00817,0010,SKU-001,Aero Mug,2025-04-06,Wholesale,West,2,14.99,0.15,0,0,17.78,late upload
+O-00818,C0008,SKU-004,USB Hub,2025-06-10,Shopify,WEST,3,34.5,10%,0,0,60.9,late upload
+O-00819,0105,SKU-001,Aero Mug,02/10/2025,Amazon,South,0,14.99,0.05,0,0,0,duplicate?
+O-00820,C0138,SKU-004,USB Hub,03/21/2025,AMZ,South,3,34.5,0,0,0,60.9,promo period
+O-00821,C0051,SKU-002,Trail Pack,2025/06/18,Amazon,Midwest,4,59.0,0.1,0,0,106.0,manual adjustment
+O-00822,0085,SKU-006,Rain Shell,2025/02/03,Shopify,Mid-West,5,88.0,0.15,0,0,185.0,late upload
+O-00823,c0004,SKU-002,Trail Pack,2025-03-24,Wholesale ,,1,59.0,10%,0,0,26.5,manual adjustment
+O-00824,0140,SKU-004,USB Hub,2025-06-17,shopify,WEST,1,34.5,0.15,0,0,20.3,promo period
+O-00825,C0117,SKU-006,RAIN SHELL,2025/01/17,Wholesale,South,7,88.0,0.15,0,0,259.0,
+O-00826,C0031,SKU-005,Desk Lamp,2025-03-30,Wholesale,Mid-West,6,42.0,0.05,0,0,144.0,promo period
+O-00827,0050,SKU-002,Trail Pack,2025/05/15,Shopify,WEST,4,59.0,0.2,1,177.0,106.0,manual adjustment
+O-00828,C0041,SKU-001,Aero Mug,2025-02-08,shopify,Northeast,2,14.99,0.1,0,0,17.78,manual adjustment
+O-00829,0100,SKU-005,Desk Lamp,03/18/2025,Retail Store,South,8,42.0,0.05,0,0,192.0,late upload
+O-00830,C0124,SKU-002,Trail Pack,2025-04-11,Retail Store,WEST,3,59.0,0.1,0,0,79.5,manual adjustment
+O-00831,C0036,SKU-004,USB Hub,2025-02-22,Amazon,north east,6,34.5,0.05,0,0,121.8,promo period
+O-00832,C0121,SKU-002,Trail Pack,2025/02/01,AMZ,north east,6,$59.00,0.15,0,0,159.0,manual adjustment
+O-00833,C0029,SKU-006,Rain Shell,2025/03/16,AMZ,Midwest,1,88.0,,0,0,37.0,duplicate?
+O-00834,C0108,SKU-001,Aero Mug,2025/03/12,shopify,WEST,4,$14.99,0.15,0,0,35.56,duplicate?
+O-00835,C0063,SKU-005,Desk Lamp,2025/05/05,Wholesale ,Northeast,1,42.0,0,0,0,24.0,
+O-00836,C0148,SKU-001,Aero Mug,04/03/2025,Shopify,WEST,4,14.99,0.1,0,0,35.56,duplicate?
+O-00837,C0147,SKU-005,Desk Lamp,2025/06/21,AMZ,South,5,42.0,10%,0,0,120.0,
+O-00838,C0117,SKU-003,Glow Serum,2025-04-01,AMZ,,4,28.0,0.2,0,0,73.2,late upload
+O-00839,C0054,SKU-005,Desk Lamp,2025-03-31,AMZ,WEST,4,42.0,10%,0,0,96.0,late upload
+O-00840,C0082,SKU-003,Glow Serum,06/13/2025,Retail Store,north east,1,28.0,0,0,0,18.3,manual adjustment
+O-00841,C0113,SKU-003,Glow Serum,2025/02/18,shopify,West,4,28.0,0,0,0,73.2,late upload
+O-00842,C0024,SKU-001,Aero Mug,2025-03-09,Wholesale ,South,0,14.99,10%,0,0,0,manual adjustment
+O-00843,C0158,SKU-005,Desk Lamp,03/04/2025,Retail Store,Midwest,5,42.0,0,0,0,120.0,late upload
+O-00844,C0038,SKU-001,Aero Mug,2025/06/06,Retail Store,Mid-West,3,14.99,0,0,0,26.67,duplicate?
+O-00845,C0148,SKU-004,USB Hub,04/21/2025,AMZ,South,3,34.5,0.15,0,0,60.9,late upload
+O-00846,C0138,SKU-005,Desk Lamp,2025/05/18,AMZ,Midwest,0,42.0,,0,0,0,
+O-00847,C0118,SKU-005,Desk Lamp,01/06/2025,,West,1,42.0,0.05,1,210.0,24.0,promo period
+O-00848,0065,SKU-006,Rain Shell,2025-04-21,,north east,5,88.0,,1,528.0,185.0,late upload
+O-00849,C0146,sku-005,Desk Lamp,2025/01/02,Amazon,South,5,42.0,0.2,0,0,120.0,late upload
+O-00850,0050,SKU-002,Trail Pack,02/16/2025,Amazon,South,3,59.0,0.05,0,0,79.5,duplicate?
+O-00851,0105,SKU-004,USB Hub,03/21/2025,Amazon,West,3,34.5,0,0,0,60.9,manual adjustment
+O-00852,C0021,SKU-003,Glow Serum,2025/05/15,Shopify,WEST,2,$28.00,0,0,0,36.6,promo period
+O-00853,C0004,SKU-001,Aero Mug,2025-01-18,Retail Store,WEST,3,14.99,0.2,0,0,26.67,late upload
+O-00854,C0154,SKU-003,Glow Serum,06/30/2025,Shopify,Northeast,5,28.0,,0,0,91.5,
+O-00855,0080,SKU-003,Glow Serum,01/26/2025,,Mid-West,6,28.0,0.05,0,0,109.8,promo period
+O-00856,C0017,SKU-003,Glow Serum,2025-03-03,AMZ,Northeast,5,28.0,0.05,0,0,91.5,promo period
+O-00857,C0026,SKU-005,Desk Lamp,2025-05-20,shopify,Mid-West,6,42.0,10%,0,0,144.0,duplicate?
+O-00858,C0007,SKU-004,USB Hub,06/06/2025,Shopify,Northeast,5,$34.50,,0,0,101.5,promo period
+O-00859,C0147,SKU-005,Desk Lamp,2025/01/13,Shopify,Mid-West,4,42.0,0,1,126.0,96.0,promo period
+O-00860,0095,SKU-006,Rain Shell,01/26/2025,Amazon,Midwest,5,88.0,0.1,0,0,185.0,promo period
+O-00861,C0004,SKU-001,Aero Mug,01/02/2025,Wholesale,Mid-West,5,14.99,0.15,0,0,44.45,duplicate?
+O-00862,C0012,SKU-002,Trail Pack,2025/06/09,shopify,Midwest,3,59.0,0.1,1,295.0,79.5,duplicate?
+O-00863,C0003,sku-004,USB Hub,2025-05-05,,West,4,34.5,0.1,0,0,81.2,
+O-00864,0030,SKU-002,Trail Pack,01/18/2025,Wholesale ,north east,2,59.0,,0,0,53.0,promo period
+O-00865,C0067,SKU-001,Aero Mug,2025-01-23,,,4,14.99,0.1,0,0,35.56,duplicate?
+O-00866,C0048,SKU-001,Aero Mug,03/03/2025,Shopify,Midwest,2,14.99,0,0,0,17.78,
+O-00867,C0146,SKU-001,Aero Mug,03/31/2025,Wholesale,north east,5,14.99,0.05,0,0,44.45,late upload
+O-00868,c0086,SKU-006,Rain Shell,2025/04/23,Wholesale,West,3,88.0,0,0,0,111.0,
+O-00869,c0017,SKU-004,USB Hub,2025-04-05,Wholesale ,Northeast,3,34.5,0.2,0,0,60.9,promo period
+O-00870,C0031,sku-002,Trail Pack,05/25/2025,Wholesale ,north east,3,59.0,0,0,0,79.5,late upload
+O-00871,C0126,SKU-005,Desk Lamp,02/09/2025,Wholesale,Mid-West,3,42.0,,0,0,72.0,manual adjustment
+O-00872,C0006,SKU-004,USB Hub,2025-01-11,Wholesale ,West,9,34.5,0.05,0,0,182.7,duplicate?
+O-00873,C0108,SKU-004,USB Hub,2025/04/04,Retail Store,Midwest,1,34.5,,0,0,20.3,late upload
+O-00874,C0159,SKU-003,Glow Serum,2025-04-06,,north east,4,28.0,10%,0,0,73.2,promo period
+O-00875,C0106,SKU-001,AERO MUG,2025-05-13,Wholesale ,West,4,14.99,10%,0,0,35.56,promo period
+O-00876,0040,SKU-006,Rain Shell,2025-02-08,,WEST,5,88.0,0.1,0,0,185.0,promo period
+O-00877,0010,SKU-006,Rain Shell,2025-03-26,Wholesale,Midwest,4,$88.00,0,1,528.0,148.0,promo period
+O-00878,0115,SKU-004,USB Hub,2025-03-16,Wholesale,Mid-West,4,34.5,0.05,0,0,81.2,duplicate?
+O-00879,C0041,SKU-005,Desk Lamp,2025-01-30,Wholesale,Mid-West,1,42.0,0.1,0,0,24.0,
+O-00880,C0151,SKU-006,Rain Shell,04/23/2025,AMZ,WEST,3,88.0,0.2,0,0,111.0,
+O-00881,C0046,SKU-002,Trail Pack,2025-06-21,AMZ,,,59.0,0,0,0,26.5,duplicate?
+O-00882,C0044,SKU-003,Glow Serum,05/12/2025,AMZ,West,1,28.0,0.1,0,0,18.3,manual adjustment
+O-00883,C0068,SKU-004,USB Hub,2025/06/18,Shopify,Northeast,5,34.5,,0,0,101.5,duplicate?
+O-00884,C0098,SKU-004,USB Hub,06/28/2025,Wholesale ,WEST,3,34.5,0.15,1,172.5,60.9,promo period
+O-00885,0050,SKU-004,USB Hub,2025-06-20,Wholesale,South,3,34.5,0,0,0,60.9,
+O-00886,0040,sku-005,Desk Lamp,2025/01/20,Amazon,West,4,42.0,0,0,0,96.0,duplicate?
+O-00887,0085,SKU-006,Rain Shell,01/21/2025,Retail Store,Midwest,4,$88.00,0.1,0,0,148.0,manual adjustment
+O-00888,C0136,SKU-002,Trail Pack,2025/05/07,Shopify,,4,$59.00,0.1,0,0,106.0,late upload
+O-00889,C0051,SKU-003,Glow Serum,2025-06-29,Wholesale,Mid-West,5,28.0,0,0,0,91.5,promo period
+O-00890,C0106,SKU-005,Desk Lamp,2025-04-20,shopify,north east,5,$42.00,0.1,0,0,120.0,
+O-00891,C0127,SKU-003,Glow Serum,2025/01/21,Amazon,WEST,4,28.0,10%,0,0,73.2,manual adjustment
+O-00892,C0156,SKU-006,Rain Shell,03/23/2025,shopify,,3,88.0,0.15,0,0,111.0,late upload
+O-00893,C0059,SKU-005,Desk Lamp,03/25/2025,,,5,42.0,,0,0,120.0,duplicate?
+O-00894,C0108,SKU-001,Aero Mug,2025-04-08,Wholesale ,West,6,14.99,0.2,0,0,53.34,late upload
+O-00895,0025,SKU-001,Aero Mug,2025/05/08,shopify,Midwest,3,14.99,0,0,0,26.67,duplicate?
+O-00896,C0111,sku-004,USB Hub,2025-05-05,AMZ,,4,34.5,0.05,0,0,81.2,promo period
+O-00897,C0127,SKU-002,Trail Pack,2025-03-28,Wholesale,north east,3,59.0,0.05,0,0,79.5,late upload
+O-00898,0095,SKU-005,Desk Lamp,01/05/2025,Retail Store,WEST,4,42.0,0,0,0,96.0,duplicate?
+O-00899,C0072,SKU-005,Desk Lamp,2025/03/24,Retail Store,Midwest,2,42.0,0.05,0,0,48.0,
+O-00900,C0081,SKU-005,Desk Lamp,2025/02/07,shopify,South,6,42.0,10%,0,0,144.0,manual adjustment
+O-00021,0010,sku-004,USB Hub,05/12/2025,Wholesale ,Northeast,5,34.5,10%,0,0,101.5,duplicate?
+O-00022,C0114,SKU-001,Aero Mug,2025/03/15,Retail Store,West,4,$14.99,0.05,0,0,35.56,duplicate?
+O-00023,C0024,SKU-002,Trail Pack,2025/06/15,shopify,Mid-West,8,59.0,0,0,0,212.0,late upload
+O-00024,C0117,SKU-005,Desk Lamp,06/03/2025,Wholesale ,WEST,3,42.0,0.1,0,0,72.0,
+O-00025,C0073,SKU-006,Rain Shell,2025/02/08,Wholesale ,,3,88.0,,0,0,111.0,late upload
+O-00026,C0147,SKU-004,USB Hub,01/12/2025,Wholesale ,West,6,$34.50,10%,0,0,121.8,promo period
+O-00027,C0152,SKU-003,Glow Serum,2025-01-04,Amazon,,6,28.0,,0,0,109.8,promo period
+O-00028,C0102,SKU-006,Rain Shell,2025/06/22,,Northeast,1,88.0,0.2,1,440.0,37.0,late upload
+O-00029,C0024,SKU-004,USB HUB,04/24/2025,Shopify,north east,7,34.5,0,0,0,142.1,late upload
+O-00030,C0136,SKU-004,USB Hub,2025/02/13,Retail Store,,3,34.5,0.05,0,0,60.9,duplicate?
+O-00031,C0066,SKU-004,USB Hub,2025/06/23,shopify,Mid-West,3,34.5,0.15,0,0,60.9,manual adjustment
+O-00032,C0051,SKU-004,USB Hub,2025/03/02,shopify,Northeast,4,34.5,0,0,0,81.2,manual adjustment
+O-00033,C0003,SKU-005,Desk Lamp,2025-03-15,Retail Store,north east,6,42.0,,0,0,144.0,late upload
+O-00034,0025,SKU-006,Rain Shell,04/23/2025,AMZ,Mid-West,1,88.0,0.15,0,0,37.0,promo period
+O-00035,C0094,SKU-005,Desk Lamp,2025-03-17,Wholesale,Midwest,2,42.0,,0,0,48.0,duplicate?

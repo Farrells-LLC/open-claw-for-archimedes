@@ -1,0 +1,13 @@
+Messy ecommerce organizer test pack
+
+Known messiness:
+- customer_id appears as customer, Customer ID, and lowercase IDs
+- sku appears as sku and SKU with case differences
+- dates use multiple formats
+- unit_price and refund_amount mix numbers and currency strings
+- channel/category/region values have aliases and blanks
+- orders contain intentional duplicates
+- refunds are JSON, inventory is TSV, most others are CSV
+
+Suggested organizer goal:
+Merge into one clean ecommerce dataset suitable for stockout/lost revenue analysis. Preserve leading zeros in customer IDs.

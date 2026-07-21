@@ -1,0 +1,86 @@
+customer_id,Customer ID,email,region,signup_date,customer_segment
+C0076,C0076,user76@example.com,,2024-03-20,Consumer
+C0077,c0077,user77@example.com,Midwest,2025-05-10,ENT
+C0078,C0078,,Northeast,01/17/2025,SMB
+C0079,C0079,user79@example.com,Northeast,10/26/2024,ENT
+0080,0080,user80@example.com,West,30-Jan-2024,SMB
+C0081,C0081,user81@example.com,West,05-Feb-2024,SMB
+C0082,C0082,user82@example.com,Midwest,2024-07-25,ENT
+C0083,C0083,user83@example.com,Midwest,23-Oct-2024,SMB
+C0084,c0084,user84@example.com,South,02-Aug-2024,ENT
+0085,0085,user85@example.com,WEST,04/23/2025,Enterprise
+C0086,C0086,user86@example.com,WEST,05/02/2024,consumer
+C0087,C0087,user87@example.com,West,09-Dec-2024,Consumer
+C0088,C0088,user88@example.com,,2024-06-10,SMB
+C0089,C0089,user89@example.com,,14-Nov-2024,SMB
+0090,0090,user90@example.com,South,2024-10-02,ENT
+C0091,c0091,,north east,03/08/2024,SMB
+C0092,C0092,user92@example.com,Midwest,07/08/2024,Enterprise
+C0093,C0093,user93@example.com,,02-Mar-2025,
+C0094,C0094,user94@example.com,north east,09-Nov-2024,ENT
+0095,0095,user95@example.com,Northeast,07-Dec-2024,Consumer
+C0096,C0096,user96@example.com,South,2025-04-25,Consumer
+C0097,C0097,user97@example.com,South,2025-03-31,
+C0098,c0098,user98@example.com,West,05/19/2024,ENT
+C0099,C0099,user99@example.com,Midwest,01/02/2025,Enterprise
+0100,0100,user100@example.com,north east,09/15/2024,Consumer
+C0101,C0101,user101@example.com,Northeast,17-Feb-2024,consumer
+C0102,C0102,user102@example.com,north east,2024-01-23,Consumer
+C0103,C0103,user103@example.com,West,11/22/2024,Enterprise
+C0104,C0104,,,09-Oct-2024,consumer
+0105,0105,user105@example.com,Northeast,2024-02-27,
+C0106,C0106,user106@example.com,West,2024-10-06,Consumer
+C0107,C0107,user107@example.com,West,2024-08-08,SMB
+C0108,C0108,user108@example.com,north east,2024-07-05,Consumer
+C0109,C0109,user109@example.com,Midwest,2024-12-15,
+0110,0110,user110@example.com,South,30-Jun-2024,consumer
+C0111,C0111,user111@example.com,West,2025-04-18,Enterprise
+C0112,c0112,user112@example.com,West,03/27/2025,SMB
+C0113,C0113,user113@example.com,West,01/12/2025,consumer
+C0114,C0114,user114@example.com,Midwest,2024-05-16,
+0115,0115,user115@example.com,South,2024-07-14,consumer
+C0116,C0116,user116@example.com,Midwest,04/12/2024,Consumer
+C0117,C0117,,north east,2025-02-24,Enterprise
+C0118,C0118,user118@example.com,Northeast,2024-12-03,consumer
+C0119,c0119,user119@example.com,WEST,2024-05-22,Consumer
+0120,0120,user120@example.com,WEST,24-Nov-2024,consumer
+C0121,C0121,user121@example.com,WEST,2025-04-25,SMB
+C0122,C0122,user122@example.com,north east,01-Apr-2024,Consumer
+C0123,C0123,user123@example.com,Northeast,25-Feb-2024,consumer
+C0124,C0124,user124@example.com,WEST,01/08/2025,consumer
+0125,0125,user125@example.com,South,16-Jul-2024,Enterprise
+C0126,c0126,user126@example.com,north east,23-Jan-2024,consumer
+C0127,C0127,user127@example.com,Northeast,23-Sep-2024,
+C0128,C0128,user128@example.com,Midwest,07/05/2024,SMB
+C0129,C0129,user129@example.com,WEST,11/15/2024,
+0130,0130,,South,01/03/2025,ENT
+C0131,C0131,user131@example.com,north east,12/07/2024,Consumer
+C0132,C0132,user132@example.com,Mid-West,12/22/2024,ENT
+C0133,c0133,user133@example.com,West,04/08/2024,
+C0134,C0134,user134@example.com,Mid-West,12-Dec-2024,Enterprise
+0135,0135,user135@example.com,north east,26-Jul-2024,SMB
+C0136,C0136,user136@example.com,north east,2024-05-26,consumer
+C0137,C0137,user137@example.com,WEST,08/26/2024,consumer
+C0138,C0138,user138@example.com,Midwest,09/18/2024,
+C0139,C0139,user139@example.com,West,2024-12-03,Consumer
+0140,0140,user140@example.com,WEST,2024-02-17,
+C0141,C0141,user141@example.com,north east,2024-04-25,Enterprise
+C0142,C0142,user142@example.com,Northeast,2024-01-24,consumer
+C0143,C0143,,South,08/21/2024,
+C0144,C0144,user144@example.com,Midwest,02-Jan-2025,consumer
+0145,0145,user145@example.com,,2024-07-23,Enterprise
+C0146,C0146,user146@example.com,Northeast,2025-04-02,consumer
+C0147,c0147,user147@example.com,Midwest,31-Mar-2024,ENT
+C0148,C0148,user148@example.com,,26-Jan-2024,Enterprise
+C0149,C0149,user149@example.com,South,2024-08-21,consumer
+0150,0150,user150@example.com,WEST,05/01/2025,ENT
+C0151,C0151,user151@example.com,Mid-West,01-Mar-2025,consumer
+C0152,C0152,user152@example.com,West,01/15/2025,consumer
+C0153,C0153,user153@example.com,north east,2025-01-19,
+C0154,c0154,user154@example.com,north east,27-Jan-2025,consumer
+0155,0155,user155@example.com,Midwest,05/20/2024,SMB
+C0156,C0156,,north east,04/30/2024,Consumer
+C0157,C0157,user157@example.com,WEST,02-Apr-2025,SMB
+C0158,C0158,user158@example.com,West,2024-03-18,consumer
+C0159,C0159,user159@example.com,West,2024-12-27,SMB
+0160,0160,user160@example.com,Mid-West,07/27/2024,ENT
