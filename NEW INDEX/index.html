@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archimedes MD — Data Intelligence & Model Design.</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#1a9fd4;--bright:#00d4ff;--teal:#00b894;--emerald:#00c853;
+  --lime:#c6ff00;--gold:#ffd600;--coral:#ff4444;--orange:#ff6d00;
+  --magenta:#e040fb;--violet:#7c4dff;--lavender:#b39ddb;
+  --white:#f0faff;--muted:#7ecce8;
+  --bg:#060e1f;--panel:rgba(6,20,45,0.82);--border:rgba(0,212,255,0.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--white);font-family:'Outfit',sans-serif;overflow-x:hidden}
+#psyche-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+#mandala-svg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(120vw,1300px);height:min(120vw,1300px);
+  pointer-events:none;z-index:0;transition:transform .1s ease-out}
+.r1{animation:cw 90s linear infinite;transform-origin:650px 650px}
+.r2{animation:ccw 65s linear infinite;transform-origin:650px 650px}
+.r3{animation:cw 48s linear infinite;transform-origin:650px 650px}
+.r4{animation:ccw 32s linear infinite;transform-origin:650px 650px}
+.r5{animation:cw 22s linear infinite;transform-origin:650px 650px}
+.r6{animation:ccw 15s linear infinite;transform-origin:650px 650px}
+.r7{animation:cw 10s linear infinite;transform-origin:650px 650px}
+.spiral{animation:cw 70s linear infinite;transform-origin:650px 650px}
+.spiral2{animation:ccw 55s linear infinite;transform-origin:650px 650px}
+.petals{animation:ccw 40s linear infinite;transform-origin:650px 650px}
+.petals2{animation:cw 30s linear infinite;transform-origin:650px 650px}
+@keyframes cw{to{transform:rotate(360deg)}}
+@keyframes ccw{to{transform:rotate(-360deg)}}
+.rc1{animation:cw 90s linear infinite,colorA 12s ease-in-out infinite alternate;transform-origin:650px 650px}
+.rc2{animation:ccw 65s linear infinite,colorB 10s ease-in-out infinite alternate;transform-origin:650px 650px}
+.rc3{animation:cw 48s linear infinite,colorC 8s ease-in-out infinite alternate;transform-origin:650px 650px}
+@keyframes colorA{0%{stroke:#00d4ff}50%{stroke:#e040fb}100%{stroke:#ffd600}}
+@keyframes colorB{0%{stroke:#ff4444}50%{stroke:#00c853}100%{stroke:#7c4dff}}
+@keyframes colorC{0%{stroke:#ffd600}50%{stroke:#00d4ff}100%{stroke:#ff6d00}}
+.pulse-dot{animation:pulseDot 2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:.4;r:6}50%{opacity:1;r:10}}
+.ripple{animation:rippleOut .8s ease-out forwards}
+@keyframes rippleOut{from{r:10;opacity:.8;stroke-width:3}to{r:300;opacity:0;stroke-width:.5}}
+#mandala-svg{animation:hueRotate 30s linear infinite}
+@keyframes hueRotate{0%{filter:hue-rotate(0deg) brightness(1)}25%{filter:hue-rotate(60deg) brightness(1.1)}50%{filter:hue-rotate(140deg) brightness(1)}75%{filter:hue-rotate(220deg) brightness(1.1)}100%{filter:hue-rotate(360deg) brightness(1)}}
+.swirl-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg at 20% 30%,rgba(26,159,212,.04) 0deg,transparent 60deg),
+             repeating-conic-gradient(from 30deg at 80% 70%,rgba(224,64,251,.03) 0deg,transparent 60deg),
+             repeating-conic-gradient(from 60deg at 50% 50%,rgba(255,68,68,.03) 0deg,transparent 60deg);
+  animation:swirlShift 20s ease-in-out infinite alternate}
+@keyframes swirlShift{from{opacity:.5}to{opacity:1}}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;background:rgba(6,14,31,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Cinzel',serif;font-size:1.45rem;font-weight:900;text-decoration:none;letter-spacing:3px;background:linear-gradient(90deg,var(--bright),var(--magenta),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(0,212,255,.5))}
+.logo-wrap{display:flex;flex-direction:column;line-height:1.1}
+.logo-kicker{font-size:.58rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-top:3px;margin-left:2px}
+.logo span{background:linear-gradient(90deg,var(--lavender),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.82rem;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s}
+.nav-links a:hover{color:var(--bright)}
+.nav-right{display:flex;gap:1rem;align-items:center}
+.btn-signin{color:var(--muted);text-decoration:none;font-size:.82rem;font-weight:500;padding:.5rem 1rem;transition:color .2s}
+.btn-signin:hover{color:var(--white)}
+.btn-nav{padding:.55rem 1.4rem;border-radius:4px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all .25s;background:linear-gradient(135deg,var(--sky),var(--violet));color:var(--white);border:none;box-shadow:0 0 20px rgba(26,159,212,.4)}
+.btn-nav:hover{box-shadow:0 0 40px rgba(26,159,212,.7);transform:translateY(-1px)}
+.hero{position:relative;z-index:10;min-height:92svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:7rem 2rem 4rem;cursor:crosshair}
+.eyebrow{font-size:.68rem;letter-spacing:5px;text-transform:uppercase;color:var(--bright);margin-bottom:1.35rem;font-weight:500;text-shadow:0 0 18px rgba(0,212,255,.55)}
+.hero h1{font-family:'Cinzel',serif;font-size:clamp(2.75rem,7.2vw,6.35rem);font-weight:900;line-height:.98;letter-spacing:1.5px;margin-bottom:1.25rem}
+.h1a{display:block;background:linear-gradient(90deg,var(--white),var(--bright),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.h1b{display:block;font-size:.88em;background:linear-gradient(90deg,var(--gold),var(--coral),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 28px rgba(255,214,0,.32));animation:titlePulse 8s ease-in-out infinite alternate}
+@keyframes titlePulse{from{filter:drop-shadow(0 0 28px rgba(255,214,0,.32))}to{filter:drop-shadow(0 0 45px rgba(224,64,251,.55))}}
+.hero-sub{font-size:clamp(1rem,1.6vw,1.14rem);color:var(--muted);max-width:690px;line-height:1.72;margin:0 auto 1.25rem;font-weight:300}
+.hero-sub strong{color:var(--white);font-weight:500}
+.report-badge{display:inline-flex;align-items:center;gap:.6rem;margin:0 auto 1.8rem;padding:.55rem 1.15rem;border-radius:999px;background:linear-gradient(135deg,rgba(74,0,224,.2),rgba(124,77,255,.15),rgba(0,212,255,.1));border:1px solid rgba(124,77,255,.4);font-size:.8rem;color:var(--lavender);cursor:default}
+.report-badge-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#4a00e0,#7c4dff,#00d4ff);background-size:200% auto;animation:shimmerDot 2s linear infinite;box-shadow:0 0 8px rgba(124,77,255,.6)}
+@keyframes shimmerDot{0%{background-position:0% center}100%{background-position:200% center}}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.btn-primary{padding:.9rem 2.35rem;border-radius:5px;border:none;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:1px;cursor:pointer;text-decoration:none;display:inline-block;transition:all .3s;background:linear-gradient(135deg,var(--bright),var(--sky),var(--violet));color:var(--white);box-shadow:0 0 34px rgba(0,212,255,.36)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 0 70px rgba(0,212,255,.7)}
+.btn-ghost{padding:.9rem 2.35rem;border-radius:5px;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;transition:all .3s;background:transparent;border:1.5px solid rgba(0,212,255,.35);color:var(--bright)}
+.btn-ghost:hover{border-color:var(--bright);background:rgba(0,212,255,.08);box-shadow:0 0 30px rgba(0,212,255,.2)}
+.scroll-hint{position:absolute;bottom:1.25rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--muted);font-size:.64rem;letter-spacing:3px;text-transform:uppercase;pointer-events:none}
+.scroll-line{width:1px;height:38px;background:linear-gradient(to bottom,var(--bright),var(--magenta),transparent);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.statsbar{position:relative;z-index:10;display:flex;justify-content:center;background:rgba(6,20,45,.8);backdrop-filter:blur(10px);border-top:1px solid rgba(0,212,255,.12);border-bottom:1px solid rgba(0,212,255,.12)}
+.stat{flex:1;max-width:240px;padding:2.2rem 1rem;text-align:center;border-right:1px solid rgba(0,212,255,.1)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:'Cinzel',serif;font-size:2.4rem;font-weight:700;background:linear-gradient(135deg,var(--bright),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:.68rem;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:5px}
+.section{position:relative;z-index:10;padding:7rem 2rem;max-width:1200px;margin:0 auto}
+.stag{font-size:.67rem;letter-spacing:5px;text-transform:uppercase;margin-bottom:1rem;font-weight:600;background:linear-gradient(90deg,var(--coral),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stitle{font-family:'Cinzel',serif;font-size:clamp(2rem,4vw,3.8rem);font-weight:700;line-height:1.1;margin-bottom:1.5rem}
+.stitle .ac{background:linear-gradient(90deg,var(--bright),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ssub{font-size:1.05rem;color:var(--muted);max-width:580px;line-height:1.75}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.75rem;margin-top:4rem}
+.step{background:var(--panel);border-radius:14px;padding:2.25rem;transition:all .35s;position:relative;overflow:hidden}
+.step::before{content:'';position:absolute;inset:0;border-radius:14px;padding:1px;background:linear-gradient(135deg,var(--sky),var(--violet),var(--coral),var(--gold));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.step:hover{transform:translateY(-6px);background:rgba(6,20,55,.95)}
+.step:hover::before{background:linear-gradient(135deg,var(--bright),var(--magenta),var(--orange),var(--lime))}
+.step.highlight-step{background:rgba(74,0,224,.12)}
+.step.highlight-step::before{background:linear-gradient(135deg,#4a00e0,#7c4dff,#00d4ff,#7c4dff)}
+.snum{font-family:'Cinzel',serif;font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,var(--bright),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:.25;line-height:1;margin-bottom:1.25rem}
+.step h3{font-family:'Cinzel',serif;font-size:1.05rem;color:var(--white);margin-bottom:.75rem;letter-spacing:1.5px}
+.step p{color:var(--muted);font-size:.875rem;line-height:1.7}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.5rem;margin-top:4rem}
+.feat{background:var(--panel);border-radius:14px;padding:1.75rem;transition:all .3s;position:relative;overflow:hidden}
+.feat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--feat-color,var(--bright));opacity:0;transition:opacity .3s}
+.feat:hover::after{opacity:1}
+.feat:hover{background:rgba(6,20,55,.9);transform:translateY(-3px)}
+.feat.hero-feat{background:linear-gradient(135deg,rgba(74,0,224,.12),rgba(124,77,255,.08),rgba(0,212,255,.05));border:1px solid rgba(124,77,255,.3)}
+.feat.hero-feat::after{background:linear-gradient(90deg,#4a00e0,#7c4dff,#00d4ff);opacity:.6}
+.fdot{width:12px;height:12px;border-radius:50%;margin-bottom:1.25rem;box-shadow:0 0 14px var(--feat-color,var(--bright))}
+.feat h3{font-size:.95rem;font-weight:600;margin-bottom:.5rem;color:var(--white)}
+.feat p{font-size:.85rem;color:var(--muted);line-height:1.65}
+.pills{display:flex;flex-wrap:wrap;gap:.875rem;margin-top:2.5rem}
+.pill{padding:.55rem 1.2rem;border-radius:999px;font-size:.82rem;font-weight:500;border:1px solid;letter-spacing:.5px;transition:all .25s;cursor:default}
+.pill:hover{transform:scale(1.06);filter:brightness(1.2)}
+.niche-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-top:3rem}
+.niche-card{background:var(--panel);border:1px solid rgba(0,212,255,.16);border-radius:12px;padding:1.4rem;position:relative;overflow:hidden;transition:transform .25s,border-color .25s,background .25s;text-decoration:none;color:inherit}
+.niche-card:hover{transform:translateY(-4px);border-color:var(--niche-color,var(--bright));background:rgba(6,20,55,.92)}
+.niche-card::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--niche-color,var(--bright));opacity:.65}
+.niche-kicker{font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--niche-color,var(--bright));margin-bottom:.65rem;font-weight:700}
+.niche-card h3{font-size:1rem;color:var(--white);margin-bottom:.55rem}
+.niche-card p{font-size:.84rem;color:var(--muted);line-height:1.65}
+.niche-proof{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem}
+.niche-proof span{font-size:.68rem;color:var(--white);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);border-radius:999px;padding:.25rem .55rem}
+.sample-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem;margin-top:3rem}
+.sample-card{background:rgba(6,20,45,.78);border:1px solid rgba(0,212,255,.14);border-radius:12px;padding:1.35rem;position:relative;overflow:hidden}
+.sample-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--sample-a,var(--bright)),var(--sample-b,var(--magenta)))}
+.sample-title{font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:2px;text-transform:uppercase;color:var(--white);margin-bottom:.75rem}
+.sample-metric{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin:.9rem 0}
+.sample-metric div{background:rgba(0,8,25,.55);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.65rem}
+.sample-metric strong{display:block;font-family:'Cinzel',serif;font-size:1.05rem;color:var(--sample-a,var(--bright))}
+.sample-metric span{display:block;font-size:.65rem;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-top:2px}
+.sample-card p{font-size:.84rem;color:var(--muted);line-height:1.65}
+.decision-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem;margin-top:2.5rem}
+.decision-item{background:rgba(0,8,25,.55);border:1px solid rgba(0,212,255,.12);border-radius:10px;padding:1rem}
+.decision-label{font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.45rem}
+.decision-item p{font-size:.86rem;color:var(--white);line-height:1.55}
+.report-showcase{margin-top:4.5rem;padding-top:3rem;border-top:1px solid rgba(0,212,255,.12)}
+.report-cta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;margin-top:2.25rem}
+.report-cta-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:2rem;position:relative;overflow:hidden;transition:all .3s}
+.report-cta-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--rc-a,var(--bright)),var(--rc-b,var(--magenta)))}
+.report-cta-card:hover{transform:translateY(-4px);background:rgba(6,20,55,.95)}
+.report-cta-tag{font-size:.66rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem}
+.report-cta-card h3{font-family:'Cinzel',serif;font-size:1.15rem;color:var(--white);margin-bottom:.75rem;letter-spacing:.5px}
+.report-cta-card p{font-size:.87rem;color:var(--muted);line-height:1.65;margin-bottom:1.5rem}
+.report-cta-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.4rem;border-radius:5px;font-size:.82rem;font-weight:600;letter-spacing:.5px;text-decoration:none;color:var(--white);background:linear-gradient(135deg,var(--rc-a,var(--sky)),var(--rc-b,var(--violet)));transition:all .25s}
+.report-cta-btn:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(0,212,255,.4)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.5rem;margin-top:4rem;align-items:start}
+.pcard{background:var(--panel);border-radius:18px;padding:2rem;transition:all .35s;position:relative;overflow:hidden}
+.pcard::before{content:'';position:absolute;inset:0;border-radius:18px;padding:1px;background:linear-gradient(135deg,rgba(0,212,255,.2),rgba(124,77,255,.2));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;transition:background .3s;pointer-events:none}
+.pcard:hover{transform:translateY(-6px)}
+.pcard:hover::before{background:linear-gradient(135deg,var(--bright),var(--violet),var(--magenta))}
+.pcard.hot{background:rgba(0,40,80,.85)}
+.pcard.hot::before{background:linear-gradient(135deg,var(--bright),var(--sky),var(--violet),var(--magenta))}
+.pbadge{display:inline-block;font-size:.62rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:999px;margin-bottom:1rem;background:linear-gradient(90deg,var(--bright),var(--violet));color:var(--bg)}
+.ptier{font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:3.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+.pprice{font-family:'Cinzel',serif;font-size:3.2rem;font-weight:700;line-height:1;margin-bottom:.2rem;background:linear-gradient(135deg,var(--white),var(--bright));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.pprice sup{font-size:1.1rem;vertical-align:super}
+.pprice .mo{font-size:.95rem;color:var(--muted);font-family:'Outfit',sans-serif;font-weight:300;-webkit-text-fill-color:var(--muted)}
+.pdesc{font-size:.83rem;color:var(--muted);margin:.5rem 0 1.5rem;line-height:1.55}
+.pdiv{height:1px;background:rgba(255,255,255,.06);margin-bottom:1.5rem}
+.plist{list-style:none;margin-bottom:2rem}
+.plist li{font-size:.85rem;color:var(--muted);padding:.35rem 0;display:flex;gap:10px;align-items:flex-start;line-height:1.4}
+.plist li::before{content:'—';font-weight:700;flex-shrink:0;color:var(--teal)}
+.plist li.on{color:var(--white)}
+.plist li.on::before{color:var(--bright)}
+.plist li.gold{color:var(--gold)}
+.plist li.gold::before{color:var(--gold)}
+.pbtn{display:block;width:100%;padding:.85rem;border-radius:6px;font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:1px;text-align:center;cursor:pointer;text-decoration:none;transition:all .25s;border:1.5px solid rgba(0,212,255,.3);color:var(--bright);background:transparent;position:relative;z-index:10}
+.pbtn:hover{background:rgba(0,212,255,.1);box-shadow:0 0 20px rgba(0,212,255,.2)}
+.pbtn.hotbtn{background:linear-gradient(135deg,var(--sky),var(--violet));color:var(--white);border:none;box-shadow:0 0 30px rgba(26,159,212,.4)}
+.pbtn.hotbtn:hover{box-shadow:0 0 60px rgba(26,159,212,.7);transform:scale(1.02)}
+.ctaband{position:relative;z-index:10;text-align:center;padding:7rem 2rem;border-top:1px solid rgba(0,212,255,.1);border-bottom:1px solid rgba(0,212,255,.1);background:linear-gradient(180deg,rgba(0,212,255,.03),rgba(124,77,255,.05),rgba(0,212,255,.03))}
+.ctaband h2{font-family:'Cinzel',serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:700;margin-bottom:1.25rem;line-height:1.15;background:linear-gradient(90deg,var(--white),var(--bright),var(--magenta),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ctaband p{color:var(--muted);font-size:1.1rem;margin-bottom:2.75rem}
+footer{position:relative;z-index:10;padding:2.5rem 3rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;border-top:1px solid rgba(255,255,255,.05);background:rgba(6,14,31,.9)}
+.flogo{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:700;letter-spacing:3px;background:linear-gradient(90deg,var(--bright),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.flinks{display:flex;gap:1.5rem}
+.flinks a{color:var(--muted);font-size:.78rem;text-decoration:none;transition:color .2s}
+.flinks a:hover{color:var(--white)}
+.fcopy{color:var(--muted);font-size:.72rem}
+.fu{opacity:0;transform:translateY(28px);transition:opacity .75s ease,transform .75s ease}
+.fu.vis{opacity:1;transform:translateY(0)}
+@media(max-width:768px){nav{padding:1rem 1.5rem}.nav-links{display:none}.hero{min-height:88svh;padding:6.5rem 1.25rem 3.5rem}.eyebrow{font-size:.62rem;letter-spacing:3.5px;margin-bottom:1rem}.hero h1{font-size:clamp(2.35rem,11vw,3.75rem);line-height:1.02;letter-spacing:1px;margin-bottom:1rem}.hero-sub{font-size:.98rem;line-height:1.65;margin-bottom:1rem}.report-badge{max-width:100%;border-radius:12px;font-size:.76rem;line-height:1.45;text-align:left;margin-bottom:1.35rem}.hero-btns{gap:.7rem}.btn-primary,.btn-ghost{width:100%;max-width:310px;padding:.82rem 1.35rem;font-size:.88rem}.scroll-hint{display:none}footer{flex-direction:column;text-align:center;padding:2rem}.statsbar{flex-wrap:wrap}.stat{border-right:none;border-bottom:1px solid rgba(0,212,255,.08);max-width:100%;width:50%}}
+#chat-bubble-btn{position:fixed;bottom:2rem;right:2rem;z-index:1000;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--violet));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(26,159,212,.5);transition:transform .2s,box-shadow .2s}
+#chat-bubble-btn:hover{transform:scale(1.08);box-shadow:0 6px 32px rgba(26,159,212,.7)}
+#chat-bubble-btn svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#chat-bubble-btn .chat-notif{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--coral);border:2px solid var(--bg);display:none}
+#chat-window{position:fixed;bottom:6rem;right:2rem;z-index:1000;width:340px;max-height:520px;background:rgba(6,14,31,.97);border:1px solid rgba(0,212,255,.25);border-radius:16px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);backdrop-filter:blur(20px)}
+#chat-window.open{display:flex}
+.chat-hdr{background:rgba(6,20,45,1);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,212,255,.15);flex-shrink:0}
+.chat-hdr-left{display:flex;align-items:center;gap:10px}
+.chat-hdr-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--violet));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-hdr-avatar svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chat-hdr-name{font-family:'Cinzel',serif;font-size:.8rem;font-weight:700;color:var(--white);letter-spacing:1px}
+.chat-hdr-status{font-size:.7rem;color:var(--teal);display:flex;align-items:center;gap:4px}
+.chat-hdr-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block}
+.chat-close-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.1rem;line-height:1;padding:2px 4px;transition:color .2s}
+.chat-close-btn:hover{color:var(--white)}
+#chat-messages{flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.5rem;scrollbar-width:thin;scrollbar-color:rgba(0,212,255,.2) transparent}
+#chat-messages::-webkit-scrollbar{width:4px}
+#chat-messages::-webkit-scrollbar-track{background:transparent}
+#chat-messages::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);border-radius:2px}
+.chat-msg{font-size:.83rem;line-height:1.5;padding:.55rem .8rem;border-radius:12px;max-width:88%;word-break:break-word}
+.chat-msg.bot{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);color:var(--white);align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.user{background:linear-gradient(135deg,rgba(26,159,212,.35),rgba(124,77,255,.35));border:1px solid rgba(124,77,255,.3);color:var(--white);align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg.typing{background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.1);color:var(--muted);align-self:flex-start;border-bottom-left-radius:4px;font-style:italic}
+.chat-input-row{display:flex;gap:8px;padding:.65rem .75rem;border-top:1px solid rgba(0,212,255,.12);flex-shrink:0;background:rgba(6,14,31,1)}
+#chat-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:8px;color:var(--white);font-family:'Outfit',sans-serif;font-size:.83rem;padding:.45rem .7rem;outline:none;transition:border-color .2s}
+#chat-input:focus{border-color:rgba(0,212,255,.5)}
+#chat-input::placeholder{color:var(--muted);opacity:.6}
+#chat-send{background:linear-gradient(135deg,var(--sky),var(--violet));border:none;border-radius:8px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s}
+#chat-send:hover{opacity:.85}
+#chat-send svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── Contact Section ── */
+.contact-wrap{max-width:680px;margin:4rem auto 0}
+.contact-card{background:var(--panel);border-radius:18px;padding:2.5rem;position:relative;overflow:hidden}
+.contact-card::before{content:'';position:absolute;inset:0;border-radius:18px;padding:1px;background:linear-gradient(135deg,rgba(0,212,255,.25),rgba(124,77,255,.25));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.contact-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.contact-field label{display:block;font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+.contact-field input,.contact-field textarea{
+  width:100%;background:rgba(0,10,30,.6);border:1px solid rgba(0,212,255,.2);border-radius:8px;
+  padding:.75rem 1rem;color:var(--white);font-family:'Outfit',sans-serif;font-size:.9rem;outline:none;
+  transition:border-color .2s
+}
+.contact-field input:focus,.contact-field textarea:focus{border-color:rgba(0,212,255,.5)}
+.contact-field textarea{min-height:120px;resize:vertical;margin-bottom:1.25rem}
+.contact-submit{
+  width:100%;padding:.9rem;border-radius:8px;border:none;cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:1px;
+  background:linear-gradient(135deg,var(--bright),var(--sky),var(--violet));color:var(--white);
+  box-shadow:0 0 30px rgba(0,212,255,.25);transition:all .25s
+}
+.contact-submit:hover{box-shadow:0 0 50px rgba(0,212,255,.45);transform:translateY(-1px)}
+.contact-submit:disabled{opacity:.5;cursor:default;transform:none}
+.contact-status{margin-top:1rem;font-size:.85rem;text-align:center;display:none}
+.contact-status.success{color:var(--emerald);display:block}
+.contact-status.error{color:var(--coral);display:block}
+@media(max-width:600px){.contact-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<canvas id="psyche-canvas" style="pointer-events:none"></canvas>
+<div class="swirl-overlay" style="pointer-events:none"></div>
+
+<svg id="mandala-svg" viewBox="0 0 1300 1300" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events:none">
+  <g class="rc1">
+    <circle cx="650" cy="650" r="600" stroke="#1a9fd4" stroke-width="1.2" opacity=".3"/>
+    <circle cx="650" cy="650" r="580" stroke="#00d4ff" stroke-width=".5" stroke-dasharray="10 15" opacity=".35"/>
+    <circle cx="650" cy="50"  r="5" fill="#00d4ff" opacity=".7"/><circle cx="950" cy="134" r="5" fill="#00d4ff" opacity=".7"/>
+    <circle cx="1166" cy="350" r="5" fill="#1a9fd4" opacity=".7"/><circle cx="1250" cy="650" r="5" fill="#00d4ff" opacity=".7"/>
+    <circle cx="1166" cy="950" r="5" fill="#00d4ff" opacity=".7"/><circle cx="950" cy="1166" r="5" fill="#1a9fd4" opacity=".7"/>
+    <circle cx="650" cy="1250" r="5" fill="#00d4ff" opacity=".7"/><circle cx="350" cy="1166" r="5" fill="#00d4ff" opacity=".7"/>
+    <circle cx="134" cy="950"  r="5" fill="#1a9fd4" opacity=".7"/><circle cx="50"  cy="650"  r="5" fill="#00d4ff" opacity=".7"/>
+    <circle cx="134" cy="350"  r="5" fill="#00d4ff" opacity=".7"/><circle cx="350" cy="134"  r="5" fill="#1a9fd4" opacity=".7"/>
+    <polygon points="650,60 1210,960 90,960" stroke="#00d4ff" stroke-width=".8" fill="none" opacity=".18"/>
+    <polygon points="650,1240 1210,340 90,340" stroke="#1a9fd4" stroke-width=".8" fill="none" opacity=".18"/>
+  </g>
+  <g class="rc2">
+    <circle cx="650" cy="650" r="480" stroke="#e040fb" stroke-width="1" opacity=".25"/>
+    <circle cx="650" cy="650" r="460" stroke="#b39ddb" stroke-width=".5" stroke-dasharray="6 10" opacity=".3"/>
+    <ellipse cx="650" cy="185" rx="22" ry="45" fill="none" stroke="#e040fb" stroke-width="1" opacity=".35"/>
+    <ellipse cx="650" cy="1115" rx="22" ry="45" fill="none" stroke="#e040fb" stroke-width="1" opacity=".35"/>
+    <ellipse cx="185" cy="650" rx="45" ry="22" fill="none" stroke="#e040fb" stroke-width="1" opacity=".35"/>
+    <ellipse cx="1115" cy="650" rx="45" ry="22" fill="none" stroke="#e040fb" stroke-width="1" opacity=".35"/>
+    <polygon points="650,170 1064,410 1064,890 650,1130 236,890 236,410" stroke="#e040fb" stroke-width=".8" fill="none" opacity=".2"/>
+  </g>
+  <g class="rc3">
+    <circle cx="650" cy="650" r="360" stroke="#ffd600" stroke-width="1.2" opacity=".25"/>
+    <circle cx="650" cy="650" r="340" stroke="#ff6d00" stroke-width=".5" stroke-dasharray="4 8" opacity=".25"/>
+    <path d="M650,290 Q850,290 850,490 Q850,690 650,690 Q450,690 450,490 Q450,350 550,310" stroke="#ffd600" stroke-width="1" fill="none" opacity=".3"/>
+    <path d="M650,1010 Q450,1010 450,810 Q450,610 650,610 Q850,610 850,810 Q850,950 750,990" stroke="#ff4444" stroke-width="1" fill="none" opacity=".3"/>
+  </g>
+  <g class="r4">
+    <circle cx="650" cy="650" r="250" stroke="#00b894" stroke-width="1.2" opacity=".3"/>
+    <circle cx="650" cy="650" r="232" stroke="#00c853" stroke-width=".6" stroke-dasharray="3 5" opacity=".3"/>
+    <line x1="650" y1="400" x2="650" y2="900" stroke="#00c853" stroke-width=".7" opacity=".35"/>
+    <line x1="400" y1="650" x2="900" y2="650" stroke="#00c853" stroke-width=".7" opacity=".35"/>
+  </g>
+  <g class="r5">
+    <circle cx="650" cy="650" r="165" stroke="#7c4dff" stroke-width="1.5" opacity=".4"/>
+    <circle cx="650" cy="650" r="148" stroke="#b39ddb" stroke-width=".8" opacity=".35"/>
+  </g>
+  <g class="r6">
+    <circle cx="650" cy="650" r="100" stroke="#ff6d00" stroke-width="1.5" opacity=".45"/>
+    <circle cx="650" cy="650" r="82"  stroke="#ff4444" stroke-width="1"   opacity=".4"/>
+    <polygon points="650,552 720,688 580,688" stroke="#ff6d00" stroke-width="1.2" fill="none" opacity=".4"/>
+    <polygon points="650,748 720,612 580,612" stroke="#ff4444" stroke-width="1.2" fill="none" opacity=".4"/>
+  </g>
+  <g class="r7">
+    <circle cx="650" cy="650" r="50"  stroke="#c6ff00" stroke-width="2" opacity=".5"/>
+    <circle cx="650" cy="650" r="32"  stroke="#00d4ff" stroke-width="1.5" opacity=".6"/>
+    <circle cx="650" cy="650" r="15"  stroke="#e040fb" stroke-width="2" opacity=".7"/>
+    <circle cx="650" cy="650" r="6" fill="#00d4ff" class="pulse-dot"/>
+  </g>
+  <g class="spiral">
+    <path d="M650,650 Q750,550 850,600 Q950,650 900,800 Q850,950 700,980 Q550,1010 430,900 Q310,790 330,620 Q350,450 500,370 Q650,290 820,360" stroke="#ffd600" stroke-width=".8" fill="none" opacity=".2"/>
+  </g>
+  <g class="spiral2">
+    <path d="M650,650 Q550,750 450,700 Q350,650 400,500 Q450,350 600,320 Q750,290 870,400 Q990,510 970,680 Q950,850 800,930 Q650,1010 480,940" stroke="#e040fb" stroke-width=".8" fill="none" opacity=".2"/>
+  </g>
+  <g class="petals">
+    <path d="M650,650 Q720,500 650,400 Q580,500 650,650Z" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,.04)" opacity=".5"/>
+    <path d="M650,650 Q800,720 900,650 Q800,580 650,650Z" stroke="#e040fb" stroke-width="1" fill="rgba(224,64,251,.04)" opacity=".5"/>
+    <path d="M650,650 Q580,800 650,900 Q720,800 650,650Z" stroke="#ffd600" stroke-width="1" fill="rgba(255,214,0,.04)" opacity=".5"/>
+    <path d="M650,650 Q500,580 400,650 Q500,720 650,650Z" stroke="#ff4444" stroke-width="1" fill="rgba(255,68,68,.04)" opacity=".5"/>
+  </g>
+  <g id="ripple-group"></g>
+</svg>
+
+<nav>
+  <div class="logo-wrap">
+    <a href="index.html" class="logo">Archimedes<span> MD</span></a>
+    <span class="logo-kicker">MD = Model Design</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#use-cases">Use cases</a></li>
+    <li><a href="#samples">Samples</a></li>
+    <li><a href="#live-reports">Live Report</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="login.html" class="btn-signin">Sign in</a>
+    <a href="login.html" class="btn-nav">Get Started</a>
+  </div>
+</nav>
+
+<div class="hero" id="hero">
+  <p class="eyebrow">Archimedes MD — Data Intelligence &amp; Model Design</p>
+  <h1>
+    <span class="h1a">Understand your data.</span>
+    <span class="h1b">Solve the problem.</span>
+  </h1>
+  <p class="hero-sub">
+    Upload messy files or one clean dataset. Archimedes MD organizes the data, writes a
+    <strong>professional Data Intelligence Report</strong> in minutes, then helps you train a model when prediction is actually useful.
+  </p>
+  <div class="report-badge">
+    <span class="report-badge-dot"></span>
+    ✦ New — Data Organization + 11-section Intelligence Reports + AI Model Training
+  </div>
+  <div class="hero-btns">
+    <a href="login.html" class="btn-primary">Start for Free</a>
+    <a href="#live-reports" class="btn-ghost">See a Real Report</a>
+    <a href="#how" class="btn-ghost">See How It Works</a>
+  </div>
+  <div class="scroll-hint"><div class="scroll-line"></div><span>Scroll</span></div>
+</div>
+
+<div class="statsbar">
+  <div class="stat"><div class="stat-n">Messy</div><div class="stat-l">Files Welcome</div></div>
+  <div class="stat"><div class="stat-n">11</div><div class="stat-l">Report Sections</div></div>
+  <div class="stat"><div class="stat-n">Any</div><div class="stat-l">Structured Domain</div></div>
+  <div class="stat"><div class="stat-n">100%</div><div class="stat-l">Your Code, Your IP</div></div>
+</div>
+
+<div class="section" id="use-cases">
+  <p class="stag fu">Common Starting Points</p>
+  <h2 class="stitle fu">Start with the problem.<br><span class="ac">Use it anywhere.</span></h2>
+  <p class="ssub fu">Archimedes MD is open-ended by design: if your data has structure, it can organize, analyze, and explain it. These are example workflows we have stress-tested, not limits on what the platform can handle.</p>
+  <div class="niche-grid">
+    <a class="niche-card fu" href="login.html" style="--niche-color:#00d4ff">
+      <div class="niche-kicker">Example: Healthcare</div>
+      <h3>Readmission &amp; Patient Risk</h3>
+      <p>Find the patients most likely to return, explain the drivers, and prioritize discharge planning, follow-up timing, and care-gap outreach.</p>
+      <div class="niche-proof"><span>risk segments</span><span>care gaps</span><span>follow-up plans</span></div>
+    </a>
+    <a class="niche-card fu" href="login.html" style="--niche-color:#ffd600">
+      <div class="niche-kicker">Example: Finance</div>
+      <h3>Credit &amp; Default Risk</h3>
+      <p>Review underwriting data, flag risky segments, compare score drivers, and turn portfolio patterns into practical approval and monitoring recommendations.</p>
+      <div class="niche-proof"><span>default drivers</span><span>policy review</span><span>risk controls</span></div>
+    </a>
+    <a class="niche-card fu" href="login.html" style="--niche-color:#ff4444">
+      <div class="niche-kicker">Example: Operations</div>
+      <h3>Fraud &amp; Cost Utilization</h3>
+      <p>Rank claims, providers, or transactions by investigation priority and separate routine variation from patterns worth reviewing immediately.</p>
+      <div class="niche-proof"><span>anomaly scores</span><span>cost leakage</span><span>review queues</span></div>
+    </a>
+    <a class="niche-card fu" href="login.html" style="--niche-color:#e040fb">
+      <div class="niche-kicker">Example: SaaS</div>
+      <h3>Churn &amp; Retention</h3>
+      <p>Identify the accounts most likely to leave, explain why, and build account-success actions around usage, support load, renewals, and adoption.</p>
+      <div class="niche-proof"><span>at-risk accounts</span><span>renewals</span><span>usage signals</span></div>
+    </a>
+  </div>
+  <p class="fu" style="color:var(--muted);font-size:.92rem;line-height:1.7;margin-top:1.5rem;max-width:760px">
+    The same workflow can apply to sales, inventory, HR, research, maintenance, education, logistics, customer support, or any other dataset where columns describe events, people, products, outcomes, costs, or behavior.
+  </p>
+</div>
+
+<div class="section" id="how">
+  <p class="stag fu">The Process</p>
+  <h2 class="stitle fu">Five steps.<br><span class="ac">Permanent intelligence.</span></h2>
+  <p class="ssub fu">Organize your data first. Then understand it. Then train a model that works forever.</p>
+  <div class="steps">
+    <div class="step fu" style="border-color:rgba(224,64,251,.4);background:linear-gradient(135deg,rgba(224,64,251,.06),rgba(124,77,255,.04))">
+      <div class="snum" style="background:linear-gradient(135deg,var(--magenta),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;opacity:.5">01</div>
+      <h3 style="color:var(--magenta)">✦ Organize Your Data</h3>
+      <p>Have messy files from multiple sources? Upload them all. Archimedes MD merges, cleans, and structures them into one coherent dataset automatically. Skip this if your data is already clean.</p>
+    </div>
+    <div class="step fu">
+      <div class="snum">02</div>
+      <h3>Upload Your Data</h3>
+      <p>Drop any structured dataset — CSV, JSON, Excel, ZIP, or IPYNB. Archimedes MD reads your columns, detects the task type, and identifies patterns automatically.</p>
+    </div>
+    <div class="step highlight-step fu">
+      <div class="snum" style="opacity:.4;background:linear-gradient(135deg,#7c4dff,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">03</div>
+      <h3>✦ Get Your Data Intelligence Report</h3>
+      <p>Before training anything, receive a full professional analysis — executive summary, statistical deep dive, correlations, segment breakdowns, outlier profiling, effect sizes, and 8+ prioritized business recommendations. In just a few minutes.</p>
+    </div>
+    <div class="step fu">
+      <div class="snum">04</div>
+      <h3>AI Selects &amp; Trains the Model</h3>
+      <p>The system tests multiple algorithms — Random Forest, Gradient Boosting, Logistic Regression — picks the best one for your data, and trains it with real accuracy metrics you can trust.</p>
+    </div>
+    <div class="step fu">
+      <div class="snum">05</div>
+      <h3>Call It Forever</h3>
+      <p>Save the trained model to your library. Whenever a similar problem arises — a new record, transaction, or measurement — the model evaluates it instantly and explains what drove the result.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="samples">
+  <p class="stag fu">Example Outputs</p>
+  <h2 class="stitle fu">Show the answer<br><span class="ac">without narrowing the use case.</span></h2>
+  <p class="ssub fu">The examples below show the kind of reasoning the report can produce. The same structure adapts to different industries, metrics, targets, and business questions.</p>
+  <div class="sample-grid">
+    <div class="sample-card fu" style="--sample-a:#00d4ff;--sample-b:#00b894">
+      <div class="sample-title">Readmission Risk Report</div>
+      <p>Identifies discharge-risk drivers and creates patient segments for follow-up timing, care-gap closure, and post-discharge outreach.</p>
+      <div class="sample-metric">
+        <div><strong>71%</strong><span>higher baseline risk</span></div>
+        <div><strong>3x</strong><span>prior admissions</span></div>
+      </div>
+      <p><strong style="color:var(--white)">First action:</strong> prioritize high-risk discharges for a 7-day follow-up and day-3 outreach check.</p>
+    </div>
+    <div class="sample-card fu" style="--sample-a:#ff4444;--sample-b:#ffd600">
+      <div class="sample-title">Fraud &amp; Cost Review</div>
+      <p>Turns claims data into a review queue by combining anomaly score, upcoding patterns, provider behavior, and cost residuals.</p>
+      <div class="sample-metric">
+        <div><strong>99%</strong><span>higher upcoding score</span></div>
+        <div><strong>23.6%</strong><span>flagged claims</span></div>
+      </div>
+      <p><strong style="color:var(--white)">First action:</strong> route the top review-priority claims to senior review before broad manual audits.</p>
+    </div>
+    <div class="sample-card fu" style="--sample-a:#e040fb;--sample-b:#7c4dff">
+      <div class="sample-title">Customer Churn Report</div>
+      <p>Explains which accounts are most likely to leave and converts product usage, support burden, and renewal timing into retention plays.</p>
+      <div class="sample-metric">
+        <div><strong>73.4</strong><span>avg churn risk score</span></div>
+        <div><strong>37%</strong><span>lower enterprise churn</span></div>
+      </div>
+      <p><strong style="color:var(--white)">First action:</strong> trigger account-success outreach when engagement drops and support tickets rise together.</p>
+    </div>
+  </div>
+  <div class="decision-strip fu">
+    <div class="decision-item"><div class="decision-label">Best Next Action</div><p>One recommended move the user can take this week.</p></div>
+    <div class="decision-item"><div class="decision-label">Biggest Risk</div><p>The data issue or business exposure most likely to cause trouble.</p></div>
+    <div class="decision-item"><div class="decision-label">Model To Train</div><p>A practical model recommendation only when prediction adds value.</p></div>
+    <div class="decision-item"><div class="decision-label">Measure Next</div><p>The missing data or experiment that would make the next report stronger.</p></div>
+  </div>
+
+  <div class="report-showcase fu" id="live-reports">
+    <p class="stag">Real Report, Real Data</p>
+    <h2 class="stitle" style="font-size:clamp(1.6rem,3vw,2.4rem)">Check out a finished report!</h2>
+    <p class="ssub">Not a mockup — these are full Data Intelligence Reports generated end-to-end from real sample datasets. See exactly what you get before you upload anything.</p>
+    <div class="report-cta-grid">
+      <div class="report-cta-card" style="--rc-a:#e040fb;--rc-b:#7c4dff">
+        <div class="report-cta-tag">SaaS &middot; 6,500 accounts &middot; 14 columns</div>
+        <h3>Subscription Churn Report</h3>
+        <p>Churn-risk breakdown by plan, industry, and acquisition channel, with effect sizes for health score, onboarding, and support-ticket volume, plus prioritized retention plays.</p>
+        <a href="/examples/churn-report.html" class="report-cta-btn">View Full Report →</a>
+      </div>
+      <div class="report-cta-card" style="--rc-a:#00d4ff;--rc-b:#00b894">
+        <div class="report-cta-tag">E-commerce &middot; 7,200 records &middot; 26 weeks</div>
+        <h3>Inventory Stockout Report</h3>
+        <p>Region, channel, and category-level stockout analysis with lost-revenue estimates, a forecast-accuracy integrity warning, and concrete restocking recommendations.</p>
+        <a href="/examples/stockout-report.html" class="report-cta-btn">View Full Report →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="features">
+  <p class="stag fu">Capabilities</p>
+  <h2 class="stitle fu">Built for every domain.<br><span class="ac">Mastered for yours.</span></h2>
+  <div class="fgrid">
+    <div class="feat hero-feat fu" style="--feat-color:var(--magenta);background:linear-gradient(135deg,rgba(224,64,251,.08),rgba(124,77,255,.06));border:1px solid rgba(224,64,251,.3)">
+      <div class="fdot" style="background:linear-gradient(135deg,var(--magenta),var(--violet));width:14px;height:14px;box-shadow:0 0 18px rgba(224,64,251,.7)"></div>
+      <h3>✦ Data Organization</h3>
+      <p>Have data scattered across multiple files, spreadsheets, or systems? Upload them all at once. Archimedes MD analyzes every file, proposes a merge plan for your review, then builds one clean coherent dataset — ready to train a model or generate a report instantly. Free users get 5 sessions total; paid plans get significantly more.</p>
+    </div>
+    <div class="feat hero-feat fu" style="--feat-color:#7c4dff">
+      <div class="fdot" style="background:linear-gradient(135deg,#4a00e0,#7c4dff,#00d4ff);width:14px;height:14px;box-shadow:0 0 18px rgba(124,77,255,.7)"></div>
+      <h3>✦ Data Intelligence Report</h3>
+      <p>Upload a dataset and get a full professional analysis in a few minutes — executive summary, statistical deep dive, correlation analysis, segment breakdowns, effect sizes, and 8+ prioritized business recommendations with specific first steps. Valuable on its own, even before training a model.</p>
+    </div>
+    <div class="feat fu" style="--feat-color:#00d4ff"><div class="fdot" style="background:#00d4ff"></div><h3>Auto Strategy Selection</h3><p>Archimedes MD tests multiple algorithms on your data and automatically picks the one with the highest real accuracy. No guesswork, no data science degree required.</p></div>
+    <div class="feat fu" style="--feat-color:#e040fb"><div class="fdot" style="background:#e040fb"></div><h3>Persistent Model Library</h3><p>Every trained model is saved permanently to your account. Return months later and run new data through a model trained on thousands of past cases.</p></div>
+    <div class="feat fu" style="--feat-color:#ff4444"><div class="fdot" style="background:#ff4444"></div><h3>Production Python Output</h3><p>Every model ships as a clean, runnable Python file. Install the dependencies, point it at your data, and run it locally. No cloud lock-in, ever.</p></div>
+    <div class="feat fu" style="--feat-color:#ffd600"><div class="fdot" style="background:#ffd600"></div><h3>Feature Importance &amp; Explanations</h3><p>Every prediction comes with a ranked feature importance chart showing which columns drove the result, plus a plain English summary you can actually act on.</p></div>
+    <div class="feat fu" style="--feat-color:#00c853"><div class="fdot" style="background:#00c853"></div><h3>Any Format, Any Domain</h3><p>CSV, JSON, Excel, ZIP, IPYNB, or HTML — any structured dataset. Financial records, clinical measurements, HR data, image folders, Jupyter notebooks. If it has structure, Archimedes MD can learn from it.</p></div>
+    <div class="feat fu" style="--feat-color:#ff6d00"><div class="fdot" style="background:#ff6d00"></div><h3>Instant Inference</h3><p>Once trained, your model evaluates new inputs in seconds. No retraining, no waiting — the same accuracy available on demand, forever.</p></div>
+  </div>
+  <div style="margin-top:5rem">
+    <p class="stag fu">Works Across</p>
+    <h3 class="fu" style="font-family:'Cinzel',serif;font-size:1.7rem;margin-bottom:.5rem">Every domain. Every problem.</h3>
+    <div class="pills fu">
+      <span class="pill" style="color:#00d4ff;border-color:rgba(0,212,255,.3);background:rgba(0,212,255,.07)">Financial Risk</span>
+      <span class="pill" style="color:#e040fb;border-color:rgba(224,64,251,.3);background:rgba(224,64,251,.07)">Fraud Detection</span>
+      <span class="pill" style="color:#ff4444;border-color:rgba(255,68,68,.3);background:rgba(255,68,68,.07)">Customer Churn</span>
+      <span class="pill" style="color:#ffd600;border-color:rgba(255,214,0,.3);background:rgba(255,214,0,.07)">Credit Risk</span>
+      <span class="pill" style="color:#00c853;border-color:rgba(0,200,83,.3);background:rgba(0,200,83,.07)">Market Forecasting</span>
+      <span class="pill" style="color:#ff6d00;border-color:rgba(255,109,0,.3);background:rgba(255,109,0,.07)">Predictive Maintenance</span>
+      <span class="pill" style="color:#7c4dff;border-color:rgba(124,77,255,.3);background:rgba(124,77,255,.07)">HR &amp; Retention</span>
+      <span class="pill" style="color:#00b894;border-color:rgba(0,184,148,.3);background:rgba(0,184,148,.07)">Clinical Measurements</span>
+      <span class="pill" style="color:#c6ff00;border-color:rgba(198,255,0,.3);background:rgba(198,255,0,.07)">Physical Therapy Outcomes</span>
+      <span class="pill" style="color:#b39ddb;border-color:rgba(179,157,219,.3);background:rgba(179,157,219,.07)">Research &amp; Academia</span>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="pricing">
+  <p class="stag fu">Pricing</p>
+  <h2 class="stitle fu">Simple tiers.<br><span class="ac">Serious power.</span></h2>
+  <p class="ssub fu">Start free. Scale as your models grow. Own every line of code you generate.</p>
+  <div class="pgrid">
+    <div class="pcard fu">
+      <div class="ptier">Free</div>
+      <div class="pprice"><sup>$</sup>0<span class="mo">/mo</span></div>
+      <p class="pdesc">Build your first model and report. No credit card required.</p>
+      <div class="pdiv"></div>
+      <ul class="plist">
+        <li class="on">1 saved model</li>
+        <li class="on">5 Data Organization sessions (total)</li>
+        <li class="on">1 Data Intelligence Report (total)</li>
+        <li class="on">Datasets up to 10MB</li>
+        <li class="on">CSV, JSON &amp; Excel</li>
+        <li class="on">Python code download</li>
+        <li>Report download</li>
+        <li>API access</li>
+      </ul>
+      <a href="login.html" class="pbtn">Get started free</a>
+    </div>
+    <div class="pcard fu">
+      <div class="ptier">Pro</div>
+      <div class="pprice"><sup>$</sup>49.99<span class="mo">/mo</span></div>
+      <p class="pdesc">For analysts and practitioners who need serious data intelligence.</p>
+      <div class="pdiv"></div>
+      <ul class="plist">
+        <li class="on">5 saved models</li>
+        <li class="on">100 Data Organization sessions</li>
+        <li class="on">50 Data Intelligence Reports</li>
+        <li class="on">Download reports as HTML</li>
+        <li class="on">2GB data uploads</li>
+        <li class="on">All file types — ZIP, IPYNB, HTML</li>
+        <li class="on">Python code download</li>
+        <li class="on">Persistent model library</li>
+        <li>API access</li>
+      </ul>
+      <a href="#" class="pbtn" onclick="startCheckout('pro');return false">Start Pro</a>
+    </div>
+    <div class="pcard hot fu">
+      <div class="pbadge">Most Popular</div>
+      <div class="ptier">Team</div>
+      <div class="pprice"><sup>$</sup>149<span class="mo">/mo</span></div>
+      <p class="pdesc">For teams running models and reports across departments or clients.</p>
+      <div class="pdiv"></div>
+      <ul class="plist">
+        <li class="on">15 saved models</li>
+        <li class="on">400 Data Organization sessions</li>
+        <li class="on">200 Data Intelligence Reports</li>
+        <li class="on">10GB data uploads</li>
+        <li class="on">All file types — ZIP, IPYNB, HTML</li>
+        <li class="on">Python code download</li>
+        <li class="on">Persistent model library</li>
+        <li class="on">Full API access</li>
+      </ul>
+      <a href="#" class="pbtn hotbtn" onclick="startCheckout('team');return false">Start Team</a>
+    </div>
+    <div class="pcard fu">
+      <div class="ptier">Unlimited</div>
+      <div class="pprice"><sup>$</sup>399<span class="mo">/mo</span></div>
+      <p class="pdesc">For power users, research teams, and organizations at scale.</p>
+      <div class="pdiv"></div>
+      <ul class="plist">
+        <li class="on">Unlimited models</li>
+        <li class="on">Unlimited Data Organization</li>
+        <li class="on">Unlimited reports &amp; exports</li>
+        <li class="on">Unlimited data uploads</li>
+        <li class="on">All file types</li>
+        <li class="on">Python code download</li>
+        <li class="on">Persistent model library</li>
+        <li class="on">Full API access</li>
+        <li class="on">Priority support</li>
+      </ul>
+      <a href="#" class="pbtn" onclick="startCheckout('unlimited');return false">Go Unlimited</a>
+    </div>
+  </div>
+</div>
+
+<div class="ctaband">
+  <h2 class="fu">Your data contains the answer.<br>Archimedes MD finds it.</h2>
+  <p class="fu">Messy files to organized data, professional reporting, and a working model when prediction is worth it.</p>
+  <a href="login.html" class="btn-primary fu">Start for Free</a>
+</div>
+
+
+<div class="section" id="contact">
+  <p class="stag fu">Questions or Feedback</p>
+  <h2 class="stitle fu">Talk to us<br><span class="ac">directly.</span></h2>
+  <p class="ssub fu">Have a question before signing up, found something that doesn't work right, or just want to say hi? Send a message — we read every one.</p>
+  <div class="contact-wrap">
+    <div class="contact-card fu">
+      <div class="contact-row">
+        <div class="contact-field">
+          <label for="contact-name">Name</label>
+          <input type="text" id="contact-name" placeholder="Your name">
+        </div>
+        <div class="contact-field">
+          <label for="contact-email">Email</label>
+          <input type="email" id="contact-email" placeholder="you@example.com" required>
+        </div>
+      </div>
+      <div class="contact-field">
+        <label for="contact-message">Message</label>
+        <textarea id="contact-message" placeholder="Question, feedback, or anything else on your mind…" required></textarea>
+      </div>
+      <button class="contact-submit" id="contact-submit" onclick="submitContactForm()">Send Message</button>
+      <div class="contact-status" id="contact-status"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="flogo">Archimedes MD</div>
+  <div class="flinks"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div>
+  <div class="fcopy">&copy; 2026 ArchimedesMD.com. All rights reserved.</div>
+</footer>
+
+<!-- ── Support Chat Bubble ── -->
+<button id="chat-bubble-btn" aria-label="Open support chat">
+  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span class="chat-notif" id="chat-notif"></span>
+</button>
+
+<div id="chat-window" role="dialog" aria-label="Archimedes MD Support Chat">
+  <div class="chat-hdr">
+    <div class="chat-hdr-left">
+      <div class="chat-hdr-avatar">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <div>
+        <div class="chat-hdr-name">Archimedes MD</div>
+        <div class="chat-hdr-status">Online</div>
+      </div>
+    </div>
+    <button class="chat-close-btn" id="chat-close" aria-label="Close chat">✕</button>
+  </div>
+  <div id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Ask about features, pricing, data…" autocomplete="off" />
+    <button id="chat-send" aria-label="Send">
+      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── Contact form ──
+async function submitContactForm(){
+  const name = document.getElementById('contact-name').value.trim();
+  const email = document.getElementById('contact-email').value.trim();
+  const message = document.getElementById('contact-message').value.trim();
+  const statusEl = document.getElementById('contact-status');
+  const btn = document.getElementById('contact-submit');
+
+  if(!message){
+    statusEl.className = 'contact-status error';
+    statusEl.textContent = 'Please write a message before sending.';
+    return;
+  }
+  if(!email || !email.includes('@')){
+    statusEl.className = 'contact-status error';
+    statusEl.textContent = 'Please provide a valid email so we can reply.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  statusEl.style.display = 'none';
+
+  try{
+    const resp = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message })
+    });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.detail || 'Something went wrong. Please try again.');
+    statusEl.className = 'contact-status success';
+    statusEl.textContent = "Thanks — we'll be in touch soon.";
+    document.getElementById('contact-name').value = '';
+    document.getElementById('contact-email').value = '';
+    document.getElementById('contact-message').value = '';
+  } catch(err){
+    statusEl.className = 'contact-status error';
+    statusEl.textContent = err.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send Message';
+}
+</script>
+<script>
+const canvas = document.getElementById('psyche-canvas');
+const ctx = canvas.getContext('2d');
+const W = ()=>canvas.width=window.innerWidth;
+const H = ()=>canvas.height=window.innerHeight;
+W();H();
+window.addEventListener('resize',()=>{W();H();});
+const COLORS=['#1a9fd4','#00d4ff','#e040fb','#ff4444','#ffd600','#00c853','#7c4dff','#ff6d00','#00b894','#c6ff00','#b39ddb'];
+const particles=Array.from({length:60},()=>({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,r:Math.random()*140+40,dx:(Math.random()-.5)*.4,dy:(Math.random()-.5)*.4,color:COLORS[Math.floor(Math.random()*COLORS.length)],alpha:Math.random()*.18+.06}));
+function drawParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);g.addColorStop(0,p.color+'44');g.addColorStop(1,'transparent');ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();p.x+=p.dx;p.y+=p.dy;if(p.x<-p.r)p.x=canvas.width+p.r;if(p.x>canvas.width+p.r)p.x=-p.r;if(p.y<-p.r)p.y=canvas.height+p.r;if(p.y>canvas.height+p.r)p.y=-p.r;});
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+const svg=document.getElementById('mandala-svg');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5)*28;my=(e.clientY/window.innerHeight-.5)*28;});
+function tiltLoop(){tx+=(mx-tx)*.04;ty+=(my-ty)*.04;svg.style.transform=`translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) rotateX(${-ty*.4}deg) rotateY(${tx*.4}deg)`;svg.style.perspective='900px';requestAnimationFrame(tiltLoop);}
+tiltLoop();
+const rippleGroup=document.getElementById('ripple-group');
+const rippleColors=['#00d4ff','#e040fb','#ffd600','#ff4444','#00c853','#7c4dff','#ff6d00'];
+let rippleIdx=0;
+document.getElementById('hero').addEventListener('click',fireRipple);
+document.addEventListener('keydown',e=>{if(e.code==='Space')fireRipple();});
+function fireRipple(){rippleIdx++;[0,120,240].forEach((delay,i)=>{setTimeout(()=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx','650');c.setAttribute('cy','650');c.setAttribute('r','10');c.setAttribute('fill','none');c.setAttribute('stroke',rippleColors[(rippleIdx+i)%rippleColors.length]);c.setAttribute('stroke-width','2');c.setAttribute('opacity','0.9');rippleGroup.appendChild(c);c.classList.add('ripple');setTimeout(()=>c.remove(),900);},delay);});const cx=window.innerWidth/2,cy=window.innerHeight/2;for(let i=0;i<8;i++){particles.push({x:cx,y:cy,r:Math.random()*80+30,dx:(Math.random()-.5)*3,dy:(Math.random()-.5)*3,color:rippleColors[Math.floor(Math.random()*rippleColors.length)],alpha:.3});if(particles.length>80)particles.shift();}}
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis');});},{threshold:.12});
+document.querySelectorAll('.fu').forEach(el=>obs.observe(el));
+document.getElementById('hero').addEventListener('touchend',e=>{e.preventDefault();fireRipple();});
+
+// ── Support Chatbot ──
+const CHAT_API = '/api/chat';
+
+const bubbleBtn  = document.getElementById('chat-bubble-btn');
+const chatWindow = document.getElementById('chat-window');
+const closeBtn   = document.getElementById('chat-close');
+const messagesEl = document.getElementById('chat-messages');
+const inputEl    = document.getElementById('chat-input');
+const sendBtn    = document.getElementById('chat-send');
+const notifDot   = document.getElementById('chat-notif');
+
+let chatHistory = [];
+let opened = false;
+
+function addMsg(text, role) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.textContent = text;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return div;
+}
+
+function showWelcome() {
+  addMsg('Hi! I\'m your Archimedes MD guide. Ask me about the Data Intelligence Report, model training, predictions, or pricing.', 'bot');
+}
+
+bubbleBtn.addEventListener('click', () => {
+  chatWindow.classList.toggle('open');
+  notifDot.style.display = 'none';
+  if (!opened) { opened = true; showWelcome(); }
+  if (chatWindow.classList.contains('open')) setTimeout(() => inputEl.focus(), 100);
+});
+
+closeBtn.addEventListener('click', () => { chatWindow.classList.remove('open'); });
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = '';
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+  addMsg(text, 'user');
+  chatHistory.push({ role: 'user', content: text });
+  const typing = addMsg('Thinking…', 'typing');
+  try {
+    const res = await fetch(CHAT_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: chatHistory.slice(-8) })
+    });
+    const data = await res.json();
+    const reply = data.reply || 'Sorry, something went wrong. Please try again.';
+    typing.remove();
+    addMsg(reply, 'bot');
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch(e) {
+    typing.remove();
+    addMsg('Unable to reach support right now. Please try again shortly.', 'bot');
+  }
+  inputEl.disabled = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+setTimeout(() => { if (!opened) notifDot.style.display = 'block'; }, 8000);
+
+// ── Stripe checkout ──
+const _sb = window.supabase
+  ? window.supabase.createClient('https://tcspcuierghienomfvzz.supabase.co', 'sb_publishable_5hHpVU7ki4di7MBRleOeYg_xJxhyg3P')
+  : null;
+
+async function startCheckout(plan) {
+  try {
+    if (!_sb) {
+      window.location.href = `/login.html?plan=${plan}`;
+      return;
+    }
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) {
+      window.location.href = `/login.html?plan=${plan}`;
+      return;
+    }
+    const resp = await fetch(`/api/create-checkout-session?plan=${plan}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+    const data = await resp.json();
+    if (data.checkout_url) {
+      window.location.href = data.checkout_url;
+    } else {
+      console.error('Checkout error:', data);
+      alert('Could not start checkout: ' + (data.detail || 'Please try again.'));
+    }
+  } catch(e) {
+    console.error('startCheckout error:', e);
+    window.location.href = `/login.html?plan=${plan}`;
+  }
+}
+</script>
+</body>
+</html>
