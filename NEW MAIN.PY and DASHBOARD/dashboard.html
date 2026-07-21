@@ -1138,9 +1138,27 @@ const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
 
+async function trackEvent(eventName, metadata = {}) {
+  try {
+    if (!currentUser || !sbClient) return;
+    await sbClient
+      .from('events')
+      .insert({
+        user_id: currentUser.id,
+        event_name: eventName,
+        metadata
+      });
+  } catch (err) {
+    console.warn('Event tracking failed:', err);
+  }
+}
+
 sbClient.auth.getSession().then(async ({data:{session}})=>{
   if(!session){ window.location.href = '/login.html'; return; }
   currentUser = session.user;
+  trackEvent('dashboard_opened', {
+    path: window.location.pathname
+  });
   const username = currentUser.user_metadata?.username || currentUser.email.split('@')[0];
   document.querySelector('.user-name').textContent = username;
   document.querySelector('.user-plan').textContent = 'Free Plan';
@@ -1608,6 +1626,11 @@ async function handleFile(file){
   document.getElementById('upload-fill').style.width='30%';
   const formData = new FormData();
   formData.append('file', file);
+  trackEvent('file_upload_started', {
+    filename: file.name,
+    size: file.size,
+    type: file.type || 'unknown'
+  });
   try{
     const resp = await fetch(API_BASE+'/upload-and-analyze', {method:'POST', headers: await authHeaders(), body:formData});
     if(!resp.ok){ const e=await resp.json(); throw new Error(e.detail||'Upload failed'); }
@@ -1628,6 +1651,16 @@ async function handleFile(file){
     document.getElementById('step2-card').style.display='block';
     document.getElementById('report-cta').style.display='block';
     const _tmcta2=document.getElementById('train-model-cta'); if(_tmcta2) _tmcta2.style.display='block';
+    trackEvent('file_uploaded', {
+      file_id: data.file_id,
+      filename: file.name,
+      size: file.size,
+      rows: data.rows,
+      cols: data.cols,
+      warning_count: data.warnings ? data.warnings.length : 0,
+      task: data.task,
+      algorithm: data.algorithm
+    });
     if(data.warnings && data.warnings.length > 0){
       const warnDiv = document.createElement('div');
       warnDiv.className = 'upload-warn';
@@ -1693,6 +1726,11 @@ async function handleFile(file){
     } catch(_){}
 
   }catch(err){
+    trackEvent('file_upload_failed', {
+      filename: file.name,
+      size: file.size,
+      error: err.message
+    });
     document.getElementById('file-info').textContent='Error: '+err.message;
     document.getElementById('file-info').style.color='var(--coral)';
   }
@@ -1743,6 +1781,13 @@ async function trainRealModel(){
   const task      = document.getElementById('taskSel').value;
   const algo      = document.getElementById('algoSel').value;
   const btn       = document.getElementById('trainBtn');
+  trackEvent('model_training_started', {
+    file_id: currentFileId,
+    model_name: name,
+    target_col: targetCol,
+    task,
+    algorithm: algo
+  });
   btn.disabled=true; btn.textContent='Preparing data...';
 
   btn.textContent='Training...';
@@ -1849,8 +1894,30 @@ async function trainRealModel(){
       version:1, bufferCount:0, realModel:true, metrics:m, targetCol,
       featureNames:m.feature_names || []
     };
+    trackEvent('model_trained', {
+      model_id: data.model_id,
+      model_name: name,
+      target_col: targetCol,
+      task,
+      algorithm: data.algorithm,
+      accuracy: m.accuracy,
+      balanced_accuracy: m.balanced_accuracy,
+      macro_f1: m.macro_f1,
+      r2_score: m.r2_score,
+      train_samples: m.train_samples,
+      test_samples: m.test_samples,
+      reliability_warning_count: m.reliability_warnings ? m.reliability_warnings.length : 0
+    });
   }catch(err){
     clearInterval(interval);
+    trackEvent('model_training_failed', {
+      file_id: currentFileId,
+      model_name: name,
+      target_col: targetCol,
+      task,
+      algorithm: algo,
+      error: err.message
+    });
     document.getElementById('train-status').textContent='Error: '+err.message;
     document.getElementById('train-status').style.color='var(--coral)';
   }
@@ -1944,6 +2011,13 @@ function saveRealModel(){
     return;
   }
 
+  trackEvent('model_saved', {
+    model_id: pendingModel.id,
+    model_name: pendingModel.name,
+    task: pendingModel.domain,
+    algorithm: pendingModel.algo,
+    reliability_warning_count: pendingModel.metrics?.reliability_warnings?.length || 0
+  });
   models.unshift(pendingModel);
   setModels(models);
   const btn=document.getElementById('saveRealBtn');
@@ -2290,11 +2364,17 @@ async function orgAnalyze(){
 
   const btn = document.getElementById('org-analyze-btn');
   btn.disabled = true; btn.textContent = '⟳ Analyzing files…';
+  const scopeInstructions = document.getElementById('orgScopeInstructions')?.value.trim() || '';
+  trackEvent('organization_analysis_started', {
+    file_count: orgFiles.length,
+    total_size: orgFiles.reduce((sum, f) => sum + f.size, 0),
+    filenames: orgFiles.map(f => f.name).slice(0, 10),
+    has_scope_instructions: !!scopeInstructions
+  });
 
   try{
     const formData = new FormData();
     orgFiles.forEach(f => formData.append('files', f));
-    const scopeInstructions = document.getElementById('orgScopeInstructions')?.value.trim() || '';
     if(scopeInstructions) formData.append('scope_instructions', scopeInstructions);
 
     const resp = await fetch(`${API_BASE}/organize/analyze`, {
@@ -2317,8 +2397,18 @@ async function orgAnalyze(){
     renderOrgPlan();
     document.getElementById('org-plan-card').style.display = 'block';
     document.getElementById('org-plan-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    trackEvent('organization_analysis_completed', {
+      file_count: orgFiles.length,
+      summary_count: orgFileSummaries.length,
+      has_pre_execution_review: !!orgPreExecutionReview,
+      warning_count: orgPreExecutionReview?.warnings?.length || 0
+    });
 
   } catch(e){
+    trackEvent('organization_analysis_failed', {
+      file_count: orgFiles.length,
+      error: e.message
+    });
     showToast('Analysis failed: ' + e.message, 'error');
   }
 
@@ -2507,6 +2597,11 @@ async function orgExecute(){
 
   const btn = document.querySelector('#org-plan-card .btn-generate');
   btn.disabled = true; btn.textContent = '⟳ Building dataset… this may take a moment';
+  trackEvent('organization_execute_started', {
+    file_count: orgFileSummaries.length,
+    confirmed_risky_operations: confirmRiskyOperations,
+    has_plan: !!orgPlan
+  });
 
   try{
     const resp = await fetch(`${API_BASE}/organize/execute`, {
@@ -2542,6 +2637,10 @@ async function orgExecute(){
     // is an expected, well-formed outcome, not a server failure. It must be
     // checked explicitly, or a blocked run would render as if it succeeded.
     if(data.blocked){
+      trackEvent('organization_execute_blocked', {
+        blocker_count: data.blockers ? data.blockers.length : 0,
+        message: data.message || null
+      });
       renderOrgBlocked(data);
       document.getElementById('org-blocked-card').style.display = 'block';
       document.getElementById('org-blocked-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2557,8 +2656,18 @@ async function orgExecute(){
     renderOrgResult(data);
     document.getElementById('org-result-card').style.display = 'block';
     document.getElementById('org-result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    trackEvent('organization_execute_completed', {
+      file_id: data.file_id,
+      rows: data.rows,
+      cols: data.columns ? data.columns.length : null,
+      file_count: orgFileSummaries.length
+    });
 
   } catch(e){
+    trackEvent('organization_execute_failed', {
+      file_count: orgFileSummaries.length,
+      error: e.message
+    });
     showToast('Execution failed: ' + e.message, 'error');
   }
 
@@ -2999,6 +3108,11 @@ async function evaluateData(){
     const num=parseFloat(raw);
     inputDict[key] = isNaN(num) ? raw : num;
   });
+  trackEvent('evaluation_started', {
+    model_id: model.id,
+    model_name: model.name,
+    provided_feature_count: Object.keys(inputDict).length
+  });
   try{
     const resp=await fetch(API_BASE+'/predict/'+model.id,{
       method:'POST',
@@ -3007,6 +3121,21 @@ async function evaluateData(){
     });
     if(!resp.ok){ const e=await resp.json(); throw new Error(e.detail||'Prediction failed'); }
     const result=await resp.json();
+    const warningCount = [
+      ...(result.input_warnings || []),
+      ...(result.model_reliability_warnings || [])
+    ].length;
+    trackEvent('evaluation_run', {
+      model_id: model.id,
+      model_name: model.name,
+      task: result.task,
+      input_completeness_pct: result.input_completeness_pct,
+      warning_count: warningCount,
+      has_unknown_categories: !!(result.unknown_categories && Object.keys(result.unknown_categories).length),
+      has_out_of_range_values: !!(result.out_of_range_values && Object.keys(result.out_of_range_values).length),
+      prediction: result.prediction ?? result.cluster ?? null,
+      confidence: result.confidence ?? null
+    });
     let evalText='';
     evalText+='PREDICTION: '+result.prediction+'\n';
     if(result.confidence) evalText+='CONFIDENCE: '+result.confidence+'%\n';
@@ -3090,6 +3219,12 @@ async function evaluateData(){
     });
     renderEvalHistory(model.name);
   }catch(err){
+    trackEvent('evaluation_failed', {
+      model_id: model?.id,
+      model_name: model?.name,
+      provided_feature_count: Object.keys(inputDict).length,
+      error: err.message
+    });
     document.getElementById('evalStream').textContent='Error: '+err.message;
   }
   btn.disabled=false;
@@ -3334,6 +3469,13 @@ async function _runReportGeneration(context, targetCol){
   btn.textContent = '⏳ Generating…';
   setReportStatus(loading, initialLoadingText, initialLoadingSub);
   loading.style.display = 'flex';
+  trackEvent('report_started', {
+    file_id: currentFileId,
+    target_col: targetCol || null,
+    has_context: !!context,
+    rows: rowCount,
+    cols: colCount
+  });
 
   try{
     setReportStatus(loading, 'Connecting to report engine', 'Starting the streamed report so the page does not time out.');
@@ -3474,8 +3616,23 @@ async function _runReportGeneration(context, targetCol){
     } else {
       showToast(`Report ready — ${rowsAnalyzed?.toLocaleString()} rows analyzed.`, 'success', 4000);
     }
+    trackEvent('report_generated', {
+      file_id: currentFileId,
+      target_col: targetCol || null,
+      rows_analyzed: rowsAnalyzed,
+      cols_analyzed: colsAnalyzed,
+      report_status: reportStatus,
+      stored_in_session: storedReportInSession
+    });
 
   } catch(err){
+    trackEvent('report_failed', {
+      file_id: currentFileId,
+      target_col: targetCol || null,
+      rows: rowCount,
+      cols: colCount,
+      error: err.message
+    });
     showToast('Report failed: ' + err.message, 'error', 5000);
   }
 
@@ -3695,6 +3852,9 @@ let selectedPlan = '';
 async function showUpgradeModal(plan){
   // Go straight to Stripe checkout instead of email modal
   const planKey = plan.toLowerCase();
+  trackEvent('checkout_started', {
+    plan: planKey
+  });
   try{
     const { data:{ session } } = await sbClient.auth.getSession();
     if(!session){ window.location.href = '/login.html'; return; }
@@ -3705,11 +3865,22 @@ async function showUpgradeModal(plan){
     });
     const data = await resp.json();
     if(data.checkout_url){
+      trackEvent('checkout_redirected', {
+        plan: planKey
+      });
       window.location.href = data.checkout_url;
     } else {
+      trackEvent('checkout_failed', {
+        plan: planKey,
+        error: data.detail || 'missing checkout_url'
+      });
       showToast(data.detail || 'Could not start checkout. Please try again.', 'error');
     }
   } catch(e){
+    trackEvent('checkout_failed', {
+      plan: planKey,
+      error: e.message
+    });
     showToast('Checkout failed. Please try again.', 'error');
   }
 }
