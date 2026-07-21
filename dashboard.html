@@ -1783,12 +1783,25 @@ async function trainRealModel(){
     if(task==='classification'){
       statsHTML=`
         <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.accuracy)}%</div><div class="stat-card-lbl">Best Accuracy</div></div>
+        <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.balanced_accuracy ?? '—')}%</div><div class="stat-card-lbl">Balanced Accuracy</div></div>
+        <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.macro_f1 ?? '—')}</div><div class="stat-card-lbl">Macro F1</div></div>
         <div class="stat-card"><div class="stat-card-val">${escapeHTML(m.algorithm_selected||algo)}</div><div class="stat-card-lbl">Best Algorithm</div></div>
         <div class="stat-card"><div class="stat-card-val">${(m.train_samples||0).toLocaleString()}</div><div class="stat-card-lbl">Trained On</div></div>`;
       if(m.all_scores){
         statsHTML+=`<div style="grid-column:1/-1;background:rgba(0,8,25,.7);border:1px solid rgba(0,212,255,.12);border-radius:10px;padding:.875rem;font-size:.78rem;color:var(--muted)">
           <div style="color:var(--bright);font-weight:600;margin-bottom:.4rem;font-size:.72rem;letter-spacing:1px;text-transform:uppercase">Algorithm Comparison</div>
-          ${Object.entries(m.all_scores).map(([k,v])=>`<div style="display:flex;justify-content:space-between;margin:.25rem 0;${k===m.algorithm_selected?'color:var(--white);font-weight:600':''}">${escapeHTML(k)}: <span>${escapeHTML(v)}%${k===m.algorithm_selected?' ✓':''}</span></div>`).join('')}
+          ${Object.entries(m.all_scores).map(([k,v])=>{
+            const label = (typeof v === 'object' && v !== null)
+              ? `${escapeHTML(v.balanced_accuracy)}% balanced · ${escapeHTML(v.accuracy)}% accuracy · F1 ${escapeHTML(v.macro_f1)}`
+              : `${escapeHTML(v)}%`;
+            return `<div style="display:flex;justify-content:space-between;margin:.25rem 0;gap:1rem;${k===m.algorithm_selected?'color:var(--white);font-weight:600':''}"><span>${escapeHTML(k)}</span><span style="text-align:right">${label}${k===m.algorithm_selected?' ✓':''}</span></div>`;
+          }).join('')}
+        </div>`;
+      }
+      if(m.per_class_metrics){
+        statsHTML+=`<div style="grid-column:1/-1;background:rgba(0,8,25,.7);border:1px solid rgba(255,214,0,.16);border-radius:10px;padding:.875rem;font-size:.78rem;color:var(--muted)">
+          <div style="color:var(--gold);font-weight:600;margin-bottom:.4rem;font-size:.72rem;letter-spacing:1px;text-transform:uppercase">Per-Class Reliability</div>
+          ${Object.entries(m.per_class_metrics).map(([label,row])=>`<div style="display:grid;grid-template-columns:1fr repeat(3,80px);gap:.5rem;margin:.25rem 0;align-items:center"><span style="color:var(--white)">${escapeHTML(label)}</span><span>Prec ${escapeHTML(row.precision)}</span><span>Rec ${escapeHTML(row.recall)}</span><span>F1 ${escapeHTML(row.f1_score)}</span></div>`).join('')}
         </div>`;
       }
     }else if(task==='regression'){
@@ -1814,6 +1827,15 @@ async function trainRealModel(){
     } else {
       warningHTML = `<div style="margin-top:1rem;padding:.75rem 1rem;background:rgba(0,200,83,.06);border:1px solid rgba(0,200,83,.2);border-radius:8px;font-size:.82rem;color:var(--emerald)">✓ <strong>Good dataset size:</strong> ${totalSamples.toLocaleString()} rows provides a solid foundation for reliable predictions.</div>`;
     }
+    if(m.reliability_warnings && m.reliability_warnings.length){
+      warningHTML += `<div class="model-reliability-note" style="margin-top:1rem;padding:.85rem 1rem;background:rgba(255,214,0,.07);border:1px solid rgba(255,214,0,.3);border-radius:8px;font-size:.82rem;color:var(--gold);line-height:1.6">
+        <strong>Reliability warnings:</strong>
+        <ul style="margin:.45rem 0 0 1rem">${m.reliability_warnings.map(w=>`<li>${escapeHTML(w)}</li>`).join('')}</ul>
+      </div>`;
+    } else if(task !== 'clustering'){
+      warningHTML += `<div class="model-reliability-note" style="margin-top:1rem;padding:.75rem 1rem;background:rgba(0,200,83,.05);border:1px solid rgba(0,200,83,.18);border-radius:8px;font-size:.82rem;color:var(--emerald)">No major reliability warnings were detected on the held-out test split.</div>`;
+    }
+    document.querySelectorAll('.model-reliability-note').forEach(el=>el.remove());
     document.getElementById('real-stats').innerHTML=statsHTML;
     document.getElementById('real-stats').style.display='grid';
     document.getElementById('real-stats').insertAdjacentHTML('afterend', warningHTML);
@@ -1824,7 +1846,8 @@ async function trainRealModel(){
       id:data.model_id, name, domain:task, algo:data.algorithm,
       accuracy:task==='classification'?m.accuracy+'%':(m.r2_score||0)+' R²',
       trainTime:'Real training', created:new Date().toLocaleDateString(),
-      version:1, bufferCount:0, realModel:true, metrics:m, targetCol
+      version:1, bufferCount:0, realModel:true, metrics:m, targetCol,
+      featureNames:m.feature_names || []
     };
   }catch(err){
     clearInterval(interval);
@@ -2063,6 +2086,10 @@ function onModelSelect(){
     <div style="text-align:center;padding:.5rem">
       <div style="font-size:.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem">Trained</div>
       <div style="font-size:.85rem;font-weight:600;color:var(--white)">${escapeHTML(model.created)}</div>
+    </div>
+    <div style="text-align:center;padding:.5rem">
+      <div style="font-size:.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem">Reliability</div>
+      <div style="font-size:.85rem;font-weight:600;color:${model.metrics?.reliability_warnings?.length ? 'var(--gold)' : 'var(--emerald)'}">${model.metrics?.reliability_warnings?.length ? `${model.metrics.reliability_warnings.length} warning${model.metrics.reliability_warnings.length===1?'':'s'}` : 'No major warnings'}</div>
     </div>`;
   info.style.display='grid';
 
@@ -2072,9 +2099,9 @@ function onModelSelect(){
   const fieldsWrap = document.getElementById('eval-fields');
   fieldsWrap.innerHTML='';
 
-  const features = model.metrics?.feature_importance
-    ? Object.keys(model.metrics.feature_importance)
-    : (model.featureNames || []);
+  const features = model.metrics?.feature_names?.length
+    ? model.metrics.feature_names
+    : (model.featureNames?.length ? model.featureNames : (model.metrics?.feature_importance ? Object.keys(model.metrics.feature_importance) : []));
 
   // Only filter out the exact target column and pure ID columns
   const targetCol = (model.targetCol || '').toLowerCase();
@@ -2868,8 +2895,9 @@ imputer = pkg['imputer']
 
 # New data
 new_data = pd.DataFrame([${JSON.stringify(inputDict)}])
-X = imputer.transform(new_data[pkg['feature_names']])
-X = scaler.transform(X)
+X_imputed = imputer.transform(new_data[pkg['feature_names']])
+X_imputed = pd.DataFrame(X_imputed, columns=pkg['feature_names'])
+X = scaler.transform(X_imputed)
 
 # Predict
 prediction = model.predict(X)[0]
@@ -2986,6 +3014,17 @@ async function evaluateData(){
       evalText+='\nPROBABILITIES:\n';
       Object.entries(result.probabilities).forEach(([k,v])=>{ evalText+='  Class '+k+': '+v+'%\n'; });
     }
+    if(result.confidence_note){
+      evalText+='\nCONFIDENCE NOTE: '+result.confidence_note+'\n';
+    }
+    if(result.input_warnings && result.input_warnings.length){
+      evalText+='\nINPUT WARNINGS:\n';
+      result.input_warnings.forEach(w=>{ evalText+='  - '+w+'\n'; });
+    }
+    if(result.model_reliability_warnings && result.model_reliability_warnings.length){
+      evalText+='\nMODEL RELIABILITY WARNINGS:\n';
+      result.model_reliability_warnings.forEach(w=>{ evalText+='  - '+w+'\n'; });
+    }
     evalText+='\n---\n';
     evalText+='Model: '+model.name+' ('+model.algo+')\n';
     evalText+='Accuracy: '+model.accuracy+'\n';
@@ -3003,9 +3042,21 @@ async function evaluateData(){
       badge.style.border = '1px solid rgba(0,212,255,.35)';
       badge.style.color = 'var(--bright)';
       if(result.confidence){
-        confidence.textContent = `${result.confidence}% confidence`;
+        confidence.textContent = `${result.confidence}% confidence${result.input_warnings?.length ? ' · input warnings present' : ''}`;
       }
       badgeWrap.style.display='block';
+    }
+    document.querySelectorAll('.eval-warning-note').forEach(el=>el.remove());
+    if(result.input_warnings?.length || result.model_reliability_warnings?.length || result.confidence_note){
+      const warningLines = [
+        ...(result.input_warnings || []),
+        ...(result.model_reliability_warnings || []),
+        ...(result.confidence_note ? [result.confidence_note] : [])
+      ];
+      badgeWrap.insertAdjacentHTML('afterend', `<div class="eval-warning-note" style="margin:0 auto 1rem;max-width:760px;padding:.85rem 1rem;background:rgba(255,214,0,.07);border:1px solid rgba(255,214,0,.28);border-radius:10px;color:var(--gold);font-size:.82rem;line-height:1.6">
+        <strong>Prediction reliability notes:</strong>
+        <ul style="margin:.45rem 0 0 1rem">${warningLines.map(w=>`<li>${escapeHTML(w)}</li>`).join('')}</ul>
+      </div>`);
     }
 
     generateHumanSummary(model, result, inputDict);

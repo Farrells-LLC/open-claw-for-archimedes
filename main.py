@@ -140,8 +140,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.metrics import (accuracy_score, f1_score, roc_auc_score,
-                             mean_squared_error, r2_score, classification_report)
+from sklearn.metrics import (accuracy_score, balanced_accuracy_score, f1_score,
+                             precision_score, recall_score, roc_auc_score,
+                             mean_squared_error, r2_score, classification_report,
+                             confusion_matrix)
 from sklearn.cluster import KMeans
 from sklearn.impute import SimpleImputer
 import joblib
@@ -319,13 +321,29 @@ def preprocess_dataframe(df: pd.DataFrame, target_col: str, task: str):
 
 def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: str, model_id: str):
     X, y, scaler, imputer, le_map, target_encoder, feature_names = preprocess_dataframe(df, target_col, task)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    stratify = None
+    if task == "classification":
+        try:
+            _, counts = np.unique(y, return_counts=True)
+            if len(counts) > 1 and counts.min() >= 2:
+                stratify = y
+        except Exception:
+            stratify = None
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=stratify,
+    )
 
     if task == "classification":
         candidates = {
-            "RandomForest": RandomForestClassifier(n_estimators=150, max_depth=10, random_state=42, n_jobs=-1),
+            "RandomForest": RandomForestClassifier(n_estimators=150, max_depth=10, random_state=42, n_jobs=-1, class_weight="balanced_subsample"),
             "GradientBoosting": GradientBoostingClassifier(n_estimators=150, max_depth=5, learning_rate=0.05, random_state=42),
-            "LogisticRegression": LogisticRegression(max_iter=1000, random_state=42),
+            "LogisticRegression": LogisticRegression(max_iter=1000, random_state=42, class_weight="balanced"),
         }
         best_model = None
         best_score = -1
@@ -335,8 +353,13 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
         for name, candidate in candidates.items():
             try:
                 candidate.fit(X_train, y_train)
-                score = float(accuracy_score(y_test, candidate.predict(X_test)))
-                all_scores[name] = round(score * 100, 2)
+                candidate_preds = candidate.predict(X_test)
+                score = float(balanced_accuracy_score(y_test, candidate_preds))
+                all_scores[name] = {
+                    "accuracy": round(float(accuracy_score(y_test, candidate_preds)) * 100, 2),
+                    "balanced_accuracy": round(score * 100, 2),
+                    "macro_f1": round(float(f1_score(y_test, candidate_preds, average="macro", zero_division=0)), 4),
+                }
                 if score > best_score:
                     best_score = score
                     best_model = candidate
@@ -349,19 +372,91 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
         preds = model.predict(X_test)
         proba = model.predict_proba(X_test) if hasattr(model, 'predict_proba') else None
         acc = float(accuracy_score(y_test, preds))
-        f1  = float(f1_score(y_test, preds, average='weighted'))
+        f1  = float(f1_score(y_test, preds, average='weighted', zero_division=0))
+        macro_f1 = float(f1_score(y_test, preds, average='macro', zero_division=0))
+        bal_acc = float(balanced_accuracy_score(y_test, preds))
+        precision_macro = float(precision_score(y_test, preds, average="macro", zero_division=0))
+        recall_macro = float(recall_score(y_test, preds, average="macro", zero_division=0))
+        labels = list(np.unique(y))
+        cm = confusion_matrix(y_test, preds, labels=labels)
+        report = classification_report(y_test, preds, labels=labels, output_dict=True, zero_division=0)
+
+        if target_encoder:
+            label_names = [str(target_encoder.inverse_transform([label])[0]) for label in labels]
+        else:
+            label_names = [str(label) for label in labels]
+        class_counts = {label_names[i]: int((y == labels[i]).sum()) for i in range(len(labels))}
+        test_class_counts = {label_names[i]: int((y_test == labels[i]).sum()) for i in range(len(labels))}
+        pred_class_counts = {label_names[i]: int((preds == labels[i]).sum()) for i in range(len(labels))}
+        per_class_metrics = {}
+        for i, label in enumerate(labels):
+            src = report.get(str(label), report.get(label_names[i], {}))
+            per_class_metrics[label_names[i]] = {
+                "precision": round(float(src.get("precision", 0)), 4),
+                "recall": round(float(src.get("recall", 0)), 4),
+                "f1_score": round(float(src.get("f1-score", 0)), 4),
+                "support": int(src.get("support", test_class_counts[label_names[i]])),
+            }
+
+        reliability_warnings = []
+        majority_pct = max(class_counts.values()) / max(sum(class_counts.values()), 1) * 100 if class_counts else 0
+        if majority_pct > 85:
+            reliability_warnings.append(
+                f"Severe class imbalance: the largest class is {majority_pct:.1f}% of the training data. Accuracy can look high while minority outcomes are missed."
+            )
+        if len(labels) == 2:
+            minority_idx = min(range(len(labels)), key=lambda i: class_counts[label_names[i]])
+            minority_label = label_names[minority_idx]
+            minority_recall = per_class_metrics[minority_label]["recall"]
+            minority_precision = per_class_metrics[minority_label]["precision"]
+            if pred_class_counts[minority_label] == 0:
+                reliability_warnings.append(
+                    f"The model predicted zero examples of minority class {minority_label!r} on the test set. Do not rely on it to catch that outcome yet."
+                )
+            elif minority_recall < 0.5:
+                reliability_warnings.append(
+                    f"Minority-class recall is low for {minority_label!r} ({minority_recall:.2f}). The model may miss many important cases."
+                )
+            if minority_precision < 0.25 and pred_class_counts[minority_label] > 0:
+                reliability_warnings.append(
+                    f"Minority-class precision is low for {minority_label!r} ({minority_precision:.2f}). Positive predictions may need human review."
+                )
+        if acc - bal_acc > 0.15:
+            reliability_warnings.append(
+                "Accuracy is much higher than balanced accuracy, which usually means class imbalance is making the headline score look better than real-world performance."
+            )
+
         metrics = {
             "accuracy": round(acc * 100, 2),
             "f1_score": round(f1, 4),
+            "macro_f1": round(macro_f1, 4),
+            "balanced_accuracy": round(bal_acc * 100, 2),
+            "precision_macro": round(precision_macro, 4),
+            "recall_macro": round(recall_macro, 4),
             "test_samples": len(y_test),
             "train_samples": len(y_train),
             "algorithm_selected": best_name,
             "all_scores": all_scores,
+            "class_balance": class_counts,
+            "test_class_balance": test_class_counts,
+            "predicted_class_balance": pred_class_counts,
+            "per_class_metrics": per_class_metrics,
+            "confusion_matrix": {
+                "labels": label_names,
+                "matrix": cm.tolist(),
+            },
+            "reliability_warnings": reliability_warnings,
+            "feature_names": feature_names,
+            "confidence_note": "Classification confidence is an uncalibrated model probability estimate, not a guarantee.",
         }
         if proba is not None and len(np.unique(y)) == 2:
             try:
                 auc = float(roc_auc_score(y_test, proba[:, 1]))
                 metrics["auc_roc"] = round(auc, 4)
+                if auc < 0.7:
+                    metrics["reliability_warnings"].append(
+                        f"AUC is only {auc:.2f}; the model separates the classes weakly and should be treated as directional."
+                    )
             except:
                 pass
 
@@ -399,6 +494,11 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
             "train_samples": len(y_train),
             "algorithm_selected": best_name,
             "all_scores": all_scores,
+            "feature_names": feature_names,
+            "reliability_warnings": (
+                ["R² is below 0.50, so predictions may be too noisy for automated decisions."]
+                if r2 < 0.5 else []
+            ),
         }
 
     else:  # clustering
@@ -416,7 +516,14 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
         n_clusters = max(2, min(8, len(df) // 50))
         model = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
         model.fit(X)
-        metrics = {"n_clusters": n_clusters, "inertia": round(float(model.inertia_), 2)}
+        metrics = {
+            "n_clusters": n_clusters,
+            "inertia": round(float(model.inertia_), 2),
+            "feature_names": feature_names,
+            "reliability_warnings": [
+                "Clustering is exploratory. Cluster numbers are not predictions and should be validated with business context before action."
+            ],
+        }
 
     # ── Feature importance ──
     feature_importance = {}
@@ -501,12 +608,18 @@ def predict_with_model(model_id: str, input_data: dict):
     # Build a case-insensitive lookup from feature name → original feature name.
     # This prevents silent 0-fill when input sends "age" but model was trained
     # on "Age" — the model would silently receive 0 for every mismatched feature.
-    feature_lookup = {f.lower(): f for f in features}
     input_lower = {k.lower(): v for k, v in input_data.items()}
+    input_warnings: list[str] = []
+    missing_features: list[str] = []
+    unknown_categories: dict[str, str] = {}
 
     row = {}
     for f in features:
-        original_val = input_lower.get(f.lower(), input_lower.get(f, 0))
+        if f.lower() in input_lower:
+            original_val = input_lower[f.lower()]
+        else:
+            original_val = 0
+            missing_features.append(f)
         row[f] = original_val
     df_input = pd.DataFrame([row])
 
@@ -515,10 +628,24 @@ def predict_with_model(model_id: str, input_data: dict):
             try:
                 df_input[col] = le.transform(df_input[col].astype(str))
             except:
+                unknown_categories[col] = str(df_input[col].iloc[0])
                 df_input[col] = 0
 
-    X = imputer.transform(df_input[features])
-    X = scaler.transform(X)
+    if missing_features:
+        shown = ", ".join(missing_features[:8])
+        extra = f" and {len(missing_features) - 8} more" if len(missing_features) > 8 else ""
+        input_warnings.append(
+            f"Missing feature values were filled with 0 for: {shown}{extra}. Prediction reliability may be reduced."
+        )
+    if unknown_categories:
+        shown = ", ".join(f"{col}={val!r}" for col, val in list(unknown_categories.items())[:5])
+        input_warnings.append(
+            f"Input contains category values not seen during training ({shown}). They were encoded with a fallback value, so treat this prediction cautiously."
+        )
+
+    X_imputed = imputer.transform(df_input[features])
+    X_imputed = pd.DataFrame(X_imputed, columns=features)
+    X = scaler.transform(X_imputed)
 
     result = {}
     if task == "classification":
@@ -528,6 +655,10 @@ def predict_with_model(model_id: str, input_data: dict):
         if hasattr(model, 'predict_proba'):
             proba = model.predict_proba(X)[0]
             result["confidence"] = round(float(max(proba)) * 100, 1)
+            result["confidence_note"] = pkg.get(
+                "metrics",
+                {},
+            ).get("confidence_note", "Classification confidence is a model probability estimate, not a guarantee.")
             if target_enc:
                 result["probabilities"] = {target_enc.inverse_transform([i])[0]: round(float(p)*100,1) for i, p in enumerate(proba)}
             else:
@@ -539,6 +670,15 @@ def predict_with_model(model_id: str, input_data: dict):
 
     result["task"] = task
     result["model_name"] = meta["name"]
+    if input_warnings:
+        result["input_warnings"] = input_warnings
+    if missing_features:
+        result["missing_features"] = missing_features
+    if unknown_categories:
+        result["unknown_categories"] = unknown_categories
+    reliability_warnings = pkg.get("metrics", {}).get("reliability_warnings") or []
+    if reliability_warnings:
+        result["model_reliability_warnings"] = reliability_warnings
     return result
 
 
@@ -1626,7 +1766,8 @@ Write ONLY a 2-3 sentence objective describing what this report should focus on,
 
 Do NOT do any of the following in the objective, even though it may feel natural:
 - Do not invent a formula for a metric (e.g. "revenue (units_sold × unit_price)") — if a computed revenue figure exists, just say "revenue"; do not show your own arithmetic for how it's derived.
-- Do not use vague umbrella terms like "profit" — name the exact field instead (e.g. gross_margin_dollars).
+- Only reference a metric or field name if it actually appears in the column list provided above. Do not mention "revenue" (or any other field) as something to quantify unless it's literally one of the given columns — if there's no revenue column, describe the impact using the fields that ARE present (e.g. gross_margin_dollars, lost_revenue_estimate) instead of naming a metric that may not exist in this dataset.
+- Do not use vague umbrella terms like "profit", "profitability", or "profit margin" — name the exact field instead (e.g. gross_margin_dollars). This applies to every variant of the word, not just the literal string "profit".
 - Do not use causal language ("causing", "leads to", "drives down") for a relationship that's only ever been observed as a correlation or co-occurrence — say "coincide with" or "are associated with" instead of "cause."
 - Do not reference a ratio, rate, or "relative to X" comparison unless you know it's a value the statistics actually compute — if unsure, describe the two quantities separately instead of a derived ratio.
 - Do not claim or imply "conversion" or "retention" issues unless conversion/retention statistics are explicitly part of this dataset — for a plain sales/orders dataset, describe volume or margin patterns instead.
@@ -1634,7 +1775,7 @@ Do NOT do any of the following in the objective, even though it may feel natural
 - Do not include evidence rules, labeling instructions, or anything about avoiding estimates — none of that belongs in this objective statement.
 - If describing disproportionate stockouts or revenue loss, phrase it as relative to computed segment totals or rates — never "relative to demand," since observed demand is censored (artificially capped) whenever a stockout occurs, so true demand isn't something the data can actually measure.
 
-Example of a well-scoped objective for a similar dataset (for style/scope reference only, not to copy verbatim): "Identify which products by sku and category, regions, and acquisition channels generate the highest computed revenue and gross_margin_dollars. Surface segments where precomputed stockout_flag rates and lost_revenue_estimate indicate inventory or conversion problems. Highlight only computed patterns involving units_sold, unit_price, discount_rate, and gross_margin_dollars."
+Example of a well-scoped objective for a similar dataset (for style/scope reference only, not to copy verbatim): "Identify which products by sku and category, regions, and acquisition channels are associated with the highest gross_margin_dollars and lowest lost_revenue_estimate. Surface segments where precomputed stockout_flag rates indicate inventory or conversion problems. Highlight only computed patterns involving units_sold, unit_price, discount_rate, and gross_margin_dollars."
 
 Output the objective text only — no preamble, no explanation, no section headers."""
 
@@ -2509,7 +2650,7 @@ def _build_steering_block(dataset_context: Optional[str], stats: Optional[dict] 
        like gross_margin_dollars/stockout_flag. A healthcare or marketing
        dataset gets its own real columns listed here, not ecommerce fields
        that don't exist in its data. Each categorical column is framed as
-       "X drivers" (deterministic string formatting, not a second API call),
+       "X segment patterns" (deterministic string formatting, not a second API call),
        and a "Stockout/lost revenue problem areas" line is added whenever
        stockout_flag or lost_revenue_estimate exist in the data.
 
@@ -2548,7 +2689,7 @@ def _build_steering_block(dataset_context: Optional[str], stats: Optional[dict] 
     # not just performance drivers) worth calling out on its own.
     #
     # Date/time-label columns (week, month, etc.) are deliberately EXCLUDED
-    # from "drivers" framing — a raw time label with no computed time_series
+    # from "segment patterns" framing — a raw time label with no computed time_series
     # stats behind it invites the model to invent a trend from a bare label,
     # which is exactly the failure mode this is guarding against. If such a
     # column exists, a plain caveat bullet replaces it instead.
@@ -2574,18 +2715,26 @@ def _build_steering_block(dataset_context: Optional[str], stats: Optional[dict] 
         "\n- For stockout_flag specifically, cite only the precomputed segment rates provided in "
         "the statistics. Do not infer or calculate a stockout rate for any segment not included."
     ) if "stockout_flag" in all_columns else ""
-    stockout_do_not = (
-        "\n- Do not recommend discounting products, SKUs, categories, or segments that are already "
-        "stocked out or likely to stock out; use substitutes, available alternatives, overstocked "
-        "items, demand shifting, or inventory allocation fixes instead."
-    ) if "stockout_flag" in all_columns else ""
-    metric_conflation_do_not = (
-        "\n- Do not treat lost_revenue_estimate and gross_margin_dollars as the same metric, "
-        "and do not add them together or rename the result as profit, lost profit, or total margin."
-    ) if "lost_revenue_estimate" in all_columns and "gross_margin_dollars" in all_columns else ""
     discount_rate_note = (
         "\n- Treat discount_rate as a rate only, not a summable revenue or impact metric."
     ) if "discount_rate" in all_columns else ""
+
+    # Conditional, field-presence-gated rules — same pattern as forecast_note/
+    # stockout_note/discount_rate_note above. These mirror protections that
+    # already exist in the main report-generation system prompt, but that
+    # prompt is invisible to anyone just reading this function's own output
+    # (e.g. the /build-prompt preview) — so this function needs to be
+    # self-sufficient on its own, not rely on a second prompt the reader
+    # never sees.
+    stockout_discount_rule = (
+        "\n- Do not recommend discounting products that are stocked out or at risk of stocking out — "
+        "discounting accelerates depletion and worsens the stockout. Use substitutes, available "
+        "alternatives, overstock discounting, demand shifting, or inventory allocation adjustments instead."
+    ) if "stockout_flag" in all_columns else ""
+    margin_conflation_rule = (
+        "\n- Do not treat lost_revenue_estimate and gross_margin_dollars as the same metric or add them "
+        "together — do not rename either figure, or their sum, as \"profit,\" \"lost profit,\" or \"total margin.\""
+    ) if "lost_revenue_estimate" in all_columns and "gross_margin_dollars" in all_columns else ""
 
     return f"""
 
@@ -2607,12 +2756,12 @@ LABELING RULES
 - Label suggestions as "hypothesis/recommendation" when they go beyond what the numbers directly show.
 
 DO NOT DO
+- Do not invent recovery amounts, lift percentages, conversion rates, retention rates, event counts, model accuracy figures, or new ratios unless those exact values are present in the computed statistics.
+- Do not use causal language ("causes," "drives," "leads to") for a relationship that is only ever observed as a correlation or co-occurrence — use association language ("is associated with," "coincides with") unless the data explicitly supports a causal claim.
 - Do not extrapolate financial impacts.
 - Do not annualize figures.
-- Do not invent recovery amounts, lift percentages, conversion rates, retention rates, event counts, model accuracy, or new ratios unless those exact values are present in the computed statistics.
-- Do not use causal language for observed relationships; use association language such as "coincide with" or "are associated with" unless causal experiment evidence is present.
 - Do not claim forecast accuracy from a correlation between forecast_demand_units and units_sold when stockouts or supply constraints exist.
-- Deprioritize traffic or vanity metrics unless they directly connect to revenue, margin, units, or computed conversion behavior.{stockout_do_not}{metric_conflation_do_not}"""
+- Deprioritize traffic or vanity metrics unless they directly connect to revenue, margin, units, or computed conversion behavior.{stockout_discount_rule}{margin_conflation_rule}"""
 
 
 def _build_hard_constraints(stats: dict) -> str:
@@ -6616,6 +6765,7 @@ async def train_real(
         "created":      datetime.utcnow().strftime("%Y-%m-%d"),
         "user_id":      user_id,
         "version":      1,
+        "feature_names": metrics.get("feature_names", []),
         "buffer_count": 0,
         "total_samples": metrics.get("train_samples", 0) + metrics.get("test_samples", 0),
         "real_model":   True,
@@ -6815,6 +6965,7 @@ async def retrain_model(model_id: str, user_id: str = Depends(get_current_user))
                     "version":       new_version,
                     "model_path":    model_path,
                     "metrics":       metrics,
+                    "feature_names":  metrics.get("feature_names", []),
                     "buffer_count":  0,
                     "last_retrained": datetime.utcnow().strftime("%Y-%m-%d %H:%M"),
                     "accuracy":      f"{metrics.get('accuracy', metrics.get('r2_score', 0))}{'%' if meta['task'] == 'classification' else ' R²'}"
