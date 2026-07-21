@@ -3010,6 +3010,7 @@ async function evaluateData(){
     let evalText='';
     evalText+='PREDICTION: '+result.prediction+'\n';
     if(result.confidence) evalText+='CONFIDENCE: '+result.confidence+'%\n';
+    if(result.input_completeness_pct !== undefined) evalText+='INPUT COMPLETENESS: '+result.input_completeness_pct+'%\n';
     if(result.probabilities){
       evalText+='\nPROBABILITIES:\n';
       Object.entries(result.probabilities).forEach(([k,v])=>{ evalText+='  Class '+k+': '+v+'%\n'; });

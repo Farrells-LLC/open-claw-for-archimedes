@@ -401,6 +401,40 @@ def _detect_leakage_risks(df: pd.DataFrame, target_col: str, task: str) -> list[
     return deduped[:8]
 
 
+def _build_feature_input_profile(
+    df: pd.DataFrame,
+    feature_names: list[str],
+    le_map: dict,
+) -> dict:
+    """Build lightweight training-time feature metadata for prediction QA."""
+    profile = {"numeric": {}, "categorical": {}}
+
+    for feature in feature_names:
+        if feature not in df.columns:
+            continue
+
+        if feature in le_map:
+            classes = [str(c) for c in getattr(le_map[feature], "classes_", [])]
+            profile["categorical"][feature] = {
+                "known_values": classes[:50],
+                "known_value_count": len(classes),
+            }
+            continue
+
+        series = pd.to_numeric(df[feature], errors="coerce").dropna()
+        if len(series) < 2:
+            continue
+        profile["numeric"][feature] = {
+            "min": round(float(series.min()), 6),
+            "max": round(float(series.max()), 6),
+            "q1": round(float(series.quantile(0.25)), 6),
+            "q3": round(float(series.quantile(0.75)), 6),
+            "median": round(float(series.median()), 6),
+        }
+
+    return profile
+
+
 # ============================================================
 # REAL TRAINING ENGINE
 # ============================================================
@@ -408,6 +442,7 @@ def _detect_leakage_risks(df: pd.DataFrame, target_col: str, task: str) -> list[
 def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: str, model_id: str):
     leakage_warnings = _detect_leakage_risks(df, target_col, task)
     X, y, scaler, imputer, le_map, target_encoder, feature_names = preprocess_dataframe(df, target_col, task)
+    feature_input_profile = _build_feature_input_profile(df, feature_names, le_map)
 
     stratify = None
     if task == "classification":
@@ -652,6 +687,7 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
         "le_map": le_map,
         "target_encoder": target_encoder,
         "feature_names": feature_names,
+        "feature_input_profile": feature_input_profile,
         "target_col": target_col,
         "task": task,
         "algorithm": algorithm,
@@ -694,6 +730,7 @@ def predict_with_model(model_id: str, input_data: dict):
     features   = pkg["feature_names"]
     task       = pkg["task"]
     target_enc = pkg.get("target_encoder")
+    feature_input_profile = pkg.get("feature_input_profile", {})
 
     # Build a case-insensitive lookup from feature name → original feature name.
     # This prevents silent 0-fill when input sends "age" but model was trained
@@ -702,11 +739,15 @@ def predict_with_model(model_id: str, input_data: dict):
     input_warnings: list[str] = []
     missing_features: list[str] = []
     unknown_categories: dict[str, str] = {}
+    invalid_numeric: dict[str, str] = {}
+    out_of_range_values: dict[str, dict] = {}
+    provided_features: list[str] = []
 
     row = {}
     for f in features:
         if f.lower() in input_lower:
             original_val = input_lower[f.lower()]
+            provided_features.append(f)
         else:
             original_val = 0
             missing_features.append(f)
@@ -718,8 +759,42 @@ def predict_with_model(model_id: str, input_data: dict):
             try:
                 df_input[col] = le.transform(df_input[col].astype(str))
             except:
-                unknown_categories[col] = str(df_input[col].iloc[0])
+                if col not in missing_features:
+                    unknown_categories[col] = str(df_input[col].iloc[0])
                 df_input[col] = 0
+
+    numeric_profile = feature_input_profile.get("numeric", {})
+    for col, stats in numeric_profile.items():
+        if col not in df_input.columns:
+            continue
+        raw_val = df_input[col].iloc[0]
+        numeric_val = pd.to_numeric(pd.Series([raw_val]), errors="coerce").iloc[0]
+        if pd.isna(numeric_val):
+            if col not in missing_features:
+                invalid_numeric[col] = str(raw_val)
+            continue
+        numeric_val = float(numeric_val)
+        if not math.isfinite(numeric_val):
+            invalid_numeric[col] = str(raw_val)
+            continue
+        df_input[col] = numeric_val
+
+        if col in missing_features:
+            continue
+        train_min = stats.get("min")
+        train_max = stats.get("max")
+        if train_min is not None and train_max is not None and (
+            numeric_val < float(train_min) or numeric_val > float(train_max)
+        ):
+            out_of_range_values[col] = {
+                "value": numeric_val,
+                "training_min": train_min,
+                "training_max": train_max,
+            }
+
+    if invalid_numeric:
+        shown = ", ".join(f"{col}={val!r}" for col, val in list(invalid_numeric.items())[:8])
+        raise ValueError(f"Invalid numeric input for: {shown}. Use numbers for numeric model features.")
 
     if missing_features:
         shown = ", ".join(missing_features[:8])
@@ -727,10 +802,23 @@ def predict_with_model(model_id: str, input_data: dict):
         input_warnings.append(
             f"Missing feature values were filled with 0 for: {shown}{extra}. Prediction reliability may be reduced."
         )
+    input_completeness_pct = round(len(provided_features) / max(len(features), 1) * 100, 1)
+    if input_completeness_pct < 50:
+        input_warnings.append(
+            f"Only {input_completeness_pct}% of expected features were provided. This prediction may be unreliable."
+        )
     if unknown_categories:
         shown = ", ".join(f"{col}={val!r}" for col, val in list(unknown_categories.items())[:5])
         input_warnings.append(
             f"Input contains category values not seen during training ({shown}). They were encoded with a fallback value, so treat this prediction cautiously."
+        )
+    if out_of_range_values:
+        shown = ", ".join(
+            f"{col}={vals['value']} outside training range [{vals['training_min']}, {vals['training_max']}]"
+            for col, vals in list(out_of_range_values.items())[:5]
+        )
+        input_warnings.append(
+            f"Input values fall outside the training data range ({shown}). Prediction reliability may be reduced."
         )
 
     X_imputed = imputer.transform(df_input[features])
@@ -760,12 +848,16 @@ def predict_with_model(model_id: str, input_data: dict):
 
     result["task"] = task
     result["model_name"] = meta["name"]
+    result["input_completeness_pct"] = input_completeness_pct
+    result["provided_features"] = provided_features
     if input_warnings:
         result["input_warnings"] = input_warnings
     if missing_features:
         result["missing_features"] = missing_features
     if unknown_categories:
         result["unknown_categories"] = unknown_categories
+    if out_of_range_values:
+        result["out_of_range_values"] = out_of_range_values
     reliability_warnings = pkg.get("metrics", {}).get("reliability_warnings") or []
     if reliability_warnings:
         result["model_reliability_warnings"] = reliability_warnings
@@ -6894,6 +6986,8 @@ async def predict(model_id: str, input_data: dict, user_id: str = Depends(get_cu
         return result
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 class FeedbackRequest(BaseModel):
@@ -7107,6 +7201,7 @@ Format as clean bullet points:
 • **Confidence:** What the confidence percentage means practically
 • **Key Factors:** 2-3 most important input values driving this prediction
 • **Recommendation:** One honest practical next step matching the actual prediction
+If Prediction result contains input_warnings, model_reliability_warnings, out_of_range_values, unknown_categories, or low input_completeness_pct, clearly say the prediction should be treated cautiously. Do not describe confidence as reliability when warnings are present.
 Be accurate and clear. No jargon.""",
             messages=[{"role": "user", "content": f"""Model: {model_name} ({algo})
 Domain: {domain}
