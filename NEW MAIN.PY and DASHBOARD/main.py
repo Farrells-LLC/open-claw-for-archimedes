@@ -315,11 +315,98 @@ def preprocess_dataframe(df: pd.DataFrame, target_col: str, task: str):
     return X_scaled, y, scaler, imputer, le_map, target_encoder, list(X.columns)
 
 
+def _detect_leakage_risks(df: pd.DataFrame, target_col: str, task: str) -> list[str]:
+    """Return warnings for columns that may leak the answer into training.
+
+    This is intentionally conservative and warning-only. It catches common
+    cases like post-outcome fields, exact target duplicates, near-perfect
+    numeric correlation with the target, and categorical columns that almost
+    perfectly determine the target.
+    """
+    if target_col not in df.columns:
+        return []
+
+    warnings_out: list[str] = []
+    target = df[target_col]
+    target_name = target_col.lower()
+    suspicious_name_terms = (
+        "actual", "true", "outcome", "result", "label", "target",
+        "post", "future", "final", "prediction", "predicted",
+    )
+
+    y_numeric = None
+    try:
+        if task == "classification":
+            y_numeric = pd.Series(LabelEncoder().fit_transform(target.astype(str)), index=df.index)
+        else:
+            y_numeric = pd.to_numeric(target, errors="coerce")
+    except Exception:
+        y_numeric = None
+
+    for col in df.columns:
+        if col == target_col:
+            continue
+        col_lower = col.lower()
+        series = df[col]
+
+        if target_name in col_lower or any(term in col_lower for term in suspicious_name_terms):
+            warnings_out.append(
+                f"Potential leakage column by name: {col!r}. Confirm it is known before the prediction moment."
+            )
+
+        try:
+            if series.astype(str).fillna("__missing__").equals(target.astype(str).fillna("__missing__")):
+                warnings_out.append(
+                    f"Potential leakage column: {col!r} exactly duplicates the target column."
+                )
+        except Exception:
+            pass
+
+        if y_numeric is not None and pd.api.types.is_numeric_dtype(series):
+            try:
+                pair = pd.concat([pd.to_numeric(series, errors="coerce"), y_numeric], axis=1).dropna()
+                if len(pair) > 20:
+                    corr = abs(float(pair.iloc[:, 0].corr(pair.iloc[:, 1])))
+                    if corr >= 0.98:
+                        warnings_out.append(
+                            f"Potential leakage column: {col!r} has near-perfect correlation with the target (r={corr:.3f})."
+                        )
+            except Exception:
+                pass
+
+        try:
+            if series.nunique(dropna=True) <= 100 and target.nunique(dropna=True) <= 50:
+                tmp = pd.DataFrame({"feature": series.astype(str), "target": target.astype(str)}).dropna()
+                if len(tmp) > 20 and tmp["feature"].nunique() > 1:
+                    purity = (
+                        tmp.groupby("feature")["target"]
+                        .value_counts()
+                        .groupby(level=0)
+                        .max()
+                        .sum()
+                        / len(tmp)
+                    )
+                    if float(purity) >= 0.98:
+                        warnings_out.append(
+                            f"Potential leakage column: {col!r} almost perfectly determines the target ({purity * 100:.1f}% purity)."
+                        )
+        except Exception:
+            pass
+
+    # De-duplicate while preserving order and keep the payload readable.
+    deduped = []
+    for warning in warnings_out:
+        if warning not in deduped:
+            deduped.append(warning)
+    return deduped[:8]
+
+
 # ============================================================
 # REAL TRAINING ENGINE
 # ============================================================
 
 def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: str, model_id: str):
+    leakage_warnings = _detect_leakage_risks(df, target_col, task)
     X, y, scaler, imputer, le_map, target_encoder, feature_names = preprocess_dataframe(df, target_col, task)
 
     stratify = None
@@ -398,7 +485,7 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
                 "support": int(src.get("support", test_class_counts[label_names[i]])),
             }
 
-        reliability_warnings = []
+        reliability_warnings = leakage_warnings.copy()
         majority_pct = max(class_counts.values()) / max(sum(class_counts.values()), 1) * 100 if class_counts else 0
         if majority_pct > 85:
             reliability_warnings.append(
@@ -446,6 +533,7 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
                 "matrix": cm.tolist(),
             },
             "reliability_warnings": reliability_warnings,
+            "leakage_warnings": leakage_warnings,
             "feature_names": feature_names,
             "confidence_note": "Classification confidence is an uncalibrated model probability estimate, not a guarantee.",
         }
@@ -495,10 +583,11 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
             "algorithm_selected": best_name,
             "all_scores": all_scores,
             "feature_names": feature_names,
-            "reliability_warnings": (
+            "reliability_warnings": leakage_warnings + (
                 ["R² is below 0.50, so predictions may be too noisy for automated decisions."]
                 if r2 < 0.5 else []
             ),
+            "leakage_warnings": leakage_warnings,
         }
 
     else:  # clustering
@@ -520,9 +609,10 @@ def train_real_model(df: pd.DataFrame, target_col: str, task: str, algorithm: st
             "n_clusters": n_clusters,
             "inertia": round(float(model.inertia_), 2),
             "feature_names": feature_names,
-            "reliability_warnings": [
+            "reliability_warnings": leakage_warnings + [
                 "Clustering is exploratory. Cluster numbers are not predictions and should be validated with business context before action."
             ],
+            "leakage_warnings": leakage_warnings,
         }
 
     # ── Feature importance ──
