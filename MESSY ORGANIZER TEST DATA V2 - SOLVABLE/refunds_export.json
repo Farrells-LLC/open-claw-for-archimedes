@@ -1,0 +1,562 @@
+[
+  {
+    "refund_id": "R-00137",
+    "order_id": "O-00137",
+    "refund date": "2025/06/15",
+    "reason": "Late Delivery",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00765",
+    "order_id": "O-00765",
+    "refund date": "2025-03-30",
+    "reason": "wrong item",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00719",
+    "order_id": "O-00719",
+    "refund date": "2025-06-21",
+    "reason": "Other",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00401",
+    "order_id": "O-00401",
+    "refund date": "2025/03/11",
+    "reason": "",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00012",
+    "order_id": "O-00012",
+    "refund date": "2025/02/19",
+    "reason": "Late Delivery",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00381",
+    "order_id": "O-00381",
+    "refund date": "06/30/2025",
+    "reason": "Other",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00062",
+    "order_id": "O-00062",
+    "refund date": "2025/01/26",
+    "reason": "wrong item",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00523",
+    "order_id": "O-00523",
+    "refund date": "06/28/2025",
+    "reason": "wrong item",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00808",
+    "order_id": "O-00808",
+    "refund date": "2025/05/17",
+    "reason": "Damaged",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00013",
+    "order_id": "O-00013",
+    "refund date": "05/01/2025",
+    "reason": "Damaged",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00116",
+    "order_id": "O-00116",
+    "refund date": "04/30/2025",
+    "reason": "Damaged",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00538",
+    "order_id": "O-00538",
+    "refund date": "2025/03/07",
+    "reason": "",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00682",
+    "order_id": "O-00682",
+    "refund date": "05/28/2025",
+    "reason": "Customer Remorse",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00273",
+    "order_id": "O-00273",
+    "refund date": "2025/03/30",
+    "reason": "wrong item",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00600",
+    "order_id": "O-00600",
+    "refund date": "2025-01-28",
+    "reason": "wrong item",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00544",
+    "order_id": "O-00544",
+    "refund date": "2025-06-28",
+    "reason": "Customer Remorse",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00010",
+    "order_id": "O-00010",
+    "refund date": "2025/03/17",
+    "reason": "Other",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00311",
+    "order_id": "O-00311",
+    "refund date": "2025-02-05",
+    "reason": "Customer Remorse",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00022",
+    "order_id": "O-00022",
+    "refund date": "2025/03/15",
+    "reason": "Other",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00831",
+    "order_id": "O-00831",
+    "refund date": "2025-02-22",
+    "reason": "wrong item",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00141",
+    "order_id": "O-00141",
+    "refund date": "2025-06-12",
+    "reason": "",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00328",
+    "order_id": "O-00328",
+    "refund date": "2025-03-20",
+    "reason": "",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00250",
+    "order_id": "O-00250",
+    "refund date": "04/17/2025",
+    "reason": "Other",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00882",
+    "order_id": "O-00882",
+    "refund date": "05/12/2025",
+    "reason": "Late Delivery",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00492",
+    "order_id": "O-00492",
+    "refund date": "2025/01/17",
+    "reason": "Customer Remorse",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00821",
+    "order_id": "O-00821",
+    "refund date": "2025/06/18",
+    "reason": "",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00219",
+    "order_id": "O-00219",
+    "refund date": "01/21/2025",
+    "reason": "Customer Remorse",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00194",
+    "order_id": "O-00194",
+    "refund date": "2025/01/17",
+    "reason": "Other",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00680",
+    "order_id": "O-00680",
+    "refund date": "2025-02-05",
+    "reason": "",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00487",
+    "order_id": "O-00487",
+    "refund date": "03/11/2025",
+    "reason": "Customer Remorse",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00490",
+    "order_id": "O-00490",
+    "refund date": "2025/06/24",
+    "reason": "Customer Remorse",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00491",
+    "order_id": "O-00491",
+    "refund date": "02/20/2025",
+    "reason": "Other",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00220",
+    "order_id": "O-00220",
+    "refund date": "2025/01/24",
+    "reason": "Late Delivery",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00102",
+    "order_id": "O-00102",
+    "refund date": "01/02/2025",
+    "reason": "Customer Remorse",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00177",
+    "order_id": "O-00177",
+    "refund date": "03/01/2025",
+    "reason": "Other",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00398",
+    "order_id": "O-00398",
+    "refund date": "2025-04-17",
+    "reason": "Customer Remorse",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00567",
+    "order_id": "O-00567",
+    "refund date": "2025-03-02",
+    "reason": "Late Delivery",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00649",
+    "order_id": "O-00649",
+    "refund date": "2025/03/14",
+    "reason": "Other",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00643",
+    "order_id": "O-00643",
+    "refund date": "2025/02/19",
+    "reason": "Customer Remorse",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00555",
+    "order_id": "O-00555",
+    "refund date": "2025-04-19",
+    "reason": "Other",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00880",
+    "order_id": "O-00880",
+    "refund date": "04/23/2025",
+    "reason": "",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00824",
+    "order_id": "O-00824",
+    "refund date": "2025-06-17",
+    "reason": "Other",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00073",
+    "order_id": "O-00073",
+    "refund date": "2025/03/28",
+    "reason": "",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00150",
+    "order_id": "O-00150",
+    "refund date": "2025-01-05",
+    "reason": "Late Delivery",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00684",
+    "order_id": "O-00684",
+    "refund date": "01/30/2025",
+    "reason": "",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00131",
+    "order_id": "O-00131",
+    "refund date": "05/28/2025",
+    "reason": "Other",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00879",
+    "order_id": "O-00879",
+    "refund date": "2025-01-30",
+    "reason": "Late Delivery",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00149",
+    "order_id": "O-00149",
+    "refund date": "2025/05/07",
+    "reason": "Other",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00779",
+    "order_id": "O-00779",
+    "refund date": "05/09/2025",
+    "reason": "Late Delivery",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00070",
+    "order_id": "O-00070",
+    "refund date": "2025-01-12",
+    "reason": "",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00526",
+    "order_id": "O-00526",
+    "refund date": "2025/03/17",
+    "reason": "",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00075",
+    "order_id": "O-00075",
+    "refund date": "2025/01/20",
+    "reason": "Late Delivery",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00580",
+    "order_id": "O-00580",
+    "refund date": "02/09/2025",
+    "reason": "",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00169",
+    "order_id": "O-00169",
+    "refund date": "2025-02-25",
+    "reason": "Late Delivery",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00253",
+    "order_id": "O-00253",
+    "refund date": "2025-02-21",
+    "reason": "Customer Remorse",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00642",
+    "order_id": "O-00642",
+    "refund date": "2025-03-25",
+    "reason": "wrong item",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00772",
+    "order_id": "O-00772",
+    "refund date": "2025/03/19",
+    "reason": "",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00424",
+    "order_id": "O-00424",
+    "refund date": "2025/06/12",
+    "reason": "Other",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00860",
+    "order_id": "O-00860",
+    "refund date": "01/26/2025",
+    "reason": "Other",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00641",
+    "order_id": "O-00641",
+    "refund date": "2025/02/10",
+    "reason": "Late Delivery",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00371",
+    "order_id": "O-00371",
+    "refund date": "2025/01/23",
+    "reason": "Other",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00231",
+    "order_id": "O-00231",
+    "refund date": "2025/01/11",
+    "reason": "Customer Remorse",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00848",
+    "order_id": "O-00848",
+    "refund date": "2025-04-21",
+    "reason": "wrong item",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00269",
+    "order_id": "O-00269",
+    "refund date": "2025/06/22",
+    "reason": "wrong item",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00417",
+    "order_id": "O-00417",
+    "refund date": "2025/04/16",
+    "reason": "Damaged",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00771",
+    "order_id": "O-00771",
+    "refund date": "2025-03-28",
+    "reason": "Customer Remorse",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00443",
+    "order_id": "O-00443",
+    "refund date": "02/28/2025",
+    "reason": "wrong item",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00044",
+    "order_id": "O-00044",
+    "refund date": "03/12/2025",
+    "reason": "Other",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00892",
+    "order_id": "O-00892",
+    "refund date": "03/23/2025",
+    "reason": "Other",
+    "refund_amount": ""
+  },
+  {
+    "refund_id": "R-00329",
+    "order_id": "O-00329",
+    "refund date": "2025/01/10",
+    "reason": "wrong item",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00800",
+    "order_id": "O-00800",
+    "refund date": "2025/04/01",
+    "reason": "Customer Remorse",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00405",
+    "order_id": "O-00405",
+    "refund date": "2025/06/20",
+    "reason": "wrong item",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00029",
+    "order_id": "O-00029",
+    "refund date": "04/24/2025",
+    "reason": "Other",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00198",
+    "order_id": "O-00198",
+    "refund date": "06/14/2025",
+    "reason": "wrong item",
+    "refund_amount": "$18.00"
+  },
+  {
+    "refund_id": "R-00688",
+    "order_id": "O-00688",
+    "refund date": "2025-03-16",
+    "reason": "wrong item",
+    "refund_amount": 49.5
+  },
+  {
+    "refund_id": "R-00744",
+    "order_id": "O-00744",
+    "refund date": "02/06/2025",
+    "reason": "Damaged",
+    "refund_amount": 25.0
+  },
+  {
+    "refund_id": "R-00383",
+    "order_id": "O-00383",
+    "refund date": "2025-02-14",
+    "reason": "Late Delivery",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00461",
+    "order_id": "O-00461",
+    "refund date": "2025-05-07",
+    "reason": "Customer Remorse",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00621",
+    "order_id": "O-00621",
+    "refund date": "04/23/2025",
+    "reason": "Damaged",
+    "refund_amount": 12.99
+  },
+  {
+    "refund_id": "R-00857",
+    "order_id": "O-00857",
+    "refund date": "2025-05-20",
+    "reason": "Customer Remorse",
+    "refund_amount": 12.99
+  }
+]
