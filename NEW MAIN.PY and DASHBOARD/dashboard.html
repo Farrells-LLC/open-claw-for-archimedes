@@ -2700,6 +2700,7 @@ function toggleOrgPreviewExpand(){
 }
 
 function renderOrgResult(data){
+  const completedWithCaveats = !!(data.completed_with_caveats || data.validation?.completed_with_caveats);
   // Stats
   document.getElementById('org-stats').innerHTML = `
     <div style="background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.875rem">
@@ -2711,17 +2712,32 @@ function renderOrgResult(data){
       <div style="font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px">Columns</div>
     </div>
     <div style="background:rgba(0,8,25,.6);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.875rem">
-      <div style="font-family:'Cinzel',serif;font-size:1.4rem;font-weight:700;color:${data.verification?.verdict === 'pass' ? 'var(--emerald)' : 'var(--gold)'}">
-        ${data.verification?.verdict === 'pass' ? '✓ Pass' : data.verification?.verdict === 'pass_with_warnings' ? '⚡ Warnings' : '✗ Issues'}
+      <div style="font-family:'Cinzel',serif;font-size:1.4rem;font-weight:700;color:${data.verification?.verdict === 'pass' && !completedWithCaveats ? 'var(--emerald)' : 'var(--gold)'}">
+        ${completedWithCaveats ? '⚡ Caveats' : data.verification?.verdict === 'pass' ? '✓ Pass' : data.verification?.verdict === 'pass_with_warnings' ? '⚡ Warnings' : '✗ Issues'}
       </div>
       <div style="font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px">Verification</div>
     </div>`;
 
   // Verification summary
   const v = data.verification || {};
-  const vColor = v.verdict === 'pass' ? 'var(--emerald)' : v.verdict === 'pass_with_warnings' ? 'var(--gold)' : 'var(--coral)';
-  let vHtml = `<div style="color:${vColor};font-weight:600;margin-bottom:.6rem;font-size:1rem">Second-pass verification: ${escapeHTML(v.verdict || 'complete')}</div>`;
+  const vColor = v.verdict === 'pass' && !completedWithCaveats ? 'var(--emerald)' : v.verdict === 'fail' ? 'var(--coral)' : 'var(--gold)';
+  let vHtml = `<div style="color:${vColor};font-weight:600;margin-bottom:.6rem;font-size:1rem">${completedWithCaveats ? 'Dataset ready with caveats' : 'Second-pass verification: ' + escapeHTML(v.verdict || 'complete')}</div>`;
   vHtml += `<div style="color:var(--muted);font-size:.95rem;line-height:1.65">${escapeHTML(v.summary || '')}</div>`;
+  const preserved = data.preserved_sources || data.change_summary?.files_preserved_unmerged || [];
+  if(preserved.length){
+    vHtml += `<div style="margin-top:.85rem;padding:.85rem 1rem;border-radius:8px;background:rgba(255,214,0,.06);border:1px solid rgba(255,214,0,.18)">
+      <div style="font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:.45rem">Preserved source files</div>
+      <div style="font-size:.9rem;color:var(--muted);line-height:1.6">
+        ${preserved.map(p => `${escapeHTML(p.filename || 'unknown file')} (${Number(p.rows || 0).toLocaleString()} rows): ${escapeHTML(p.reason || 'preserved without joining')}`).join('<br>')}
+      </div>
+    </div>`;
+  }
+  const validationWarnings = data.validation?.warnings || [];
+  if(validationWarnings.length){
+    vHtml += `<div style="display:flex;flex-direction:column;gap:.45rem;margin-top:.75rem">` +
+      validationWarnings.slice(0, 8).map(w => `<div style="color:var(--gold);font-size:.88rem;line-height:1.55;padding-top:.45rem;border-top:1px solid rgba(255,214,0,.1)">${escapeHTML(w)}</div>`).join('') +
+      `${validationWarnings.length > 8 ? `<div style="color:var(--muted);font-size:.82rem;margin-top:.25rem">+ ${validationWarnings.length - 8} more warning(s) in the downloadable organization report.</div>` : ''}</div>`;
+  }
   if(v.issues && v.issues.length){
     vHtml += `<div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.75rem">` +
       v.issues.map(i => `<div style="color:var(--gold);font-size:.9rem;line-height:1.55;padding-top:.5rem;border-top:1px solid rgba(255,214,0,.1)">${escapeHTML(i)}</div>`).join('') +
@@ -2729,8 +2745,8 @@ function renderOrgResult(data){
   }
   const vEl = document.getElementById('org-verification');
   vEl.innerHTML = vHtml;
-  vEl.style.background = v.verdict === 'pass' ? 'rgba(0,200,83,.06)' : 'rgba(255,214,0,.06)';
-  vEl.style.border = `1px solid ${v.verdict === 'pass' ? 'rgba(0,200,83,.2)' : 'rgba(255,214,0,.2)'}`;
+  vEl.style.background = v.verdict === 'pass' && !completedWithCaveats ? 'rgba(0,200,83,.06)' : 'rgba(255,214,0,.06)';
+  vEl.style.border = `1px solid ${v.verdict === 'pass' && !completedWithCaveats ? 'rgba(0,200,83,.2)' : 'rgba(255,214,0,.2)'}`;
   vEl.style.borderRadius = '10px';
   vEl.style.padding = '1.1rem 1.25rem';
 

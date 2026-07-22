@@ -5426,6 +5426,7 @@ def _build_change_summary(
     fnames_in_order: list[str], original_counts: dict, total_original_rows: int,
     output_rows: int, output_cols: int, join_diagnostics: list[dict],
     base_files_used: list[str], transformations: list[dict],
+    preserved_sources: Optional[list[dict]] = None,
 ) -> dict:
     """Assemble a single, human-readable record of what the organizer did.
 
@@ -5496,6 +5497,7 @@ def _build_change_summary(
         "input_files": [{"filename": f, "rows": original_counts.get(f, 0)} for f in fnames_in_order],
         "files_appended": files_appended,
         "files_joined": files_joined,
+        "files_preserved_unmerged": preserved_sources or [],
         "rows_before_total": total_original_rows,
         "rows_after": output_rows,
         "columns_after": output_cols,
@@ -5545,6 +5547,13 @@ def _build_organization_report_text(
         lines.append(f"  Appended together: {', '.join(change_summary['files_appended'])}")
     if change_summary["files_joined"]:
         lines.append(f"  Joined in: {', '.join(change_summary['files_joined'])}")
+    if change_summary.get("files_preserved_unmerged"):
+        lines.append("  Preserved without joining:")
+        for item in change_summary["files_preserved_unmerged"]:
+            lines.append(
+                f"    - {item.get('filename', 'unknown')}: "
+                f"{int(item.get('rows', 0)):,} rows ({item.get('reason', 'could not be confidently joined')})"
+            )
     lines.append(f"  Rows before (sum of inputs): {change_summary['rows_before_total']:,}")
     lines.append(f"  Rows after: {change_summary['rows_after']:,}")
     lines.append(f"  Columns in final dataset: {change_summary['columns_after']}")
@@ -5779,6 +5788,54 @@ def _prepare_aggregated_lookup(
         agg_df[col] = agg_df[col].fillna(0).astype(int)
     agg_df = agg_df.reset_index().rename(columns={"index": group_by})
     return agg_df, None
+
+
+def _safe_source_prefix(filename: str) -> str:
+    """Return a stable, readable prefix for preserving unmerged source columns."""
+    stem = Path(str(filename)).stem.lower()
+    stem = re.sub(r"[^a-z0-9]+", "_", stem).strip("_")
+    return stem or "source"
+
+
+def _build_preserved_source_rows(filename: str, df: pd.DataFrame, reason: str) -> pd.DataFrame:
+    """Represent an unmerged source file inside the final output without losing it.
+
+    The organizer's main job is still to build the best joined/cleaned table it
+    can. When a file cannot be confidently joined, refusing the whole run is too
+    harsh for non-technical users. These namespaced rows preserve the raw source
+    records in the downloadable dataset while clearly marking them as sidecar
+    source records rather than normal rows from the main merged grain.
+    """
+    prefix = _safe_source_prefix(filename)
+    preserved = df.copy()
+    preserved = preserved.rename(columns={c: f"preserved_{prefix}__{c}" for c in preserved.columns})
+    preserved.insert(0, "__archimedes_preservation_reason", reason)
+    preserved.insert(0, "__archimedes_source_file", filename)
+    preserved.insert(0, "__archimedes_record_type", "preserved_unmerged_source")
+    return preserved
+
+
+def _append_preserved_sources(
+    result_df: pd.DataFrame,
+    dfs: dict[str, pd.DataFrame],
+    preserve_reasons: dict[str, str],
+) -> tuple[pd.DataFrame, list[dict]]:
+    """Append unmerged source files as clearly marked preserved rows."""
+    if not preserve_reasons:
+        return result_df, []
+
+    pieces = [result_df.copy()]
+    summary = []
+    for fname, reason in preserve_reasons.items():
+        if fname not in dfs:
+            continue
+        preserved = _build_preserved_source_rows(fname, dfs[fname], reason)
+        pieces.append(preserved)
+        summary.append({"filename": fname, "rows": len(dfs[fname]), "reason": reason})
+
+    if len(pieces) == 1:
+        return result_df, []
+    return pd.concat(pieces, ignore_index=True, sort=False), summary
 
 
 def _execute_join_step(
@@ -6154,6 +6211,7 @@ async def _organize_execute_impl(
     join_diagnostics: list[dict] = []
     grain_warnings: list[str] = []
     blockers: list[dict] = []
+    preserve_reasons: dict[str, str] = {}
     base_files_used: list[str] = []  # populated by whichever merge path runs, used by _build_change_summary
 
     if joins_plan:
@@ -6161,16 +6219,15 @@ async def _organize_execute_impl(
         base_files_requested = base_file_spec if isinstance(base_file_spec, list) else [base_file_spec]
         missing_base_files = [f for f in base_files_requested if f not in dfs]
         if missing_base_files:
-            # Previously this silently dropped any nonexistent filename and
-            # fell back to the first uploaded file — exactly the "looks
-            # successful but is actually wrong" failure mode this whole join
-            # engine exists to prevent. A typo'd base_file must block, not
-            # quietly substitute a different file the user never asked for.
+            grain_warnings.append(
+                f"The plan referenced missing base file(s) {missing_base_files}; the organizer used "
+                f"the first available uploaded file instead and recorded this caveat."
+            )
             blockers.append({
                 "type": "missing_base_file",
                 "files": missing_base_files,
                 "message": f"base_file references file(s) not among the uploaded files: {missing_base_files}. "
-                           f"Check for a typo, or confirm the intended file was actually uploaded.",
+                           f"The organizer continued with the available files instead of stopping.",
             })
         base_files = [f for f in base_files_requested if f in dfs] or [fnames_in_order[0]]
         base_files_used = base_files
@@ -6195,6 +6252,10 @@ async def _organize_execute_impl(
             on = step.get("on")
             how = step.get("how", "left")
             if right_file not in dfs:
+                grain_warnings.append(
+                    f"Join step referenced '{right_file}', but that file was not available. The organizer "
+                    f"continued with the other uploaded files."
+                )
                 blockers.append({
                     "type": "unknown_file_in_join_step",
                     "message": f"Join step references '{right_file}', which was not among the uploaded files.",
@@ -6216,6 +6277,10 @@ async def _organize_execute_impl(
                     right_df_for_join, agg_spec, right_file, known_id_columns=id_columns_hint
                 )
                 if agg_blocker:
+                    preserve_reasons[right_file] = (
+                        "Could not safely aggregate this file for the requested join, so the raw rows "
+                        "were preserved instead of being dropped."
+                    )
                     blockers.append(agg_blocker)
                     continue
                 right_df_for_join = agg_df
@@ -6225,6 +6290,10 @@ async def _organize_execute_impl(
                 known_id_columns=id_columns_hint,
             )
             if blocker:
+                preserve_reasons[right_file] = (
+                    "Could not confidently join this file with the selected key(s), so the raw rows "
+                    "were preserved instead of being dropped."
+                )
                 blockers.append(blocker)
                 continue
             result_df = merged
@@ -6241,6 +6310,10 @@ async def _organize_execute_impl(
                 )
             risk_blocker = _check_risky_fanout(diag, right_file, join_keys, confirm_risky_operations)
             if risk_blocker:
+                grain_warnings.append(
+                    f"Joining '{right_file}' on {join_keys} has high fanout risk. The organizer completed "
+                    f"the output but marked this as a caveat instead of silently treating it as fully clean."
+                )
                 blockers.append(risk_blocker)
             if diag["id_format_mismatch_detected"]:
                 grain_warnings.append(
@@ -6251,34 +6324,34 @@ async def _organize_execute_impl(
 
         unused_files = [f for f in fnames_in_order if f not in joined_files]
         if unused_files:
+            for f in unused_files:
+                preserve_reasons[f] = (
+                    "The merge plan did not place this file into the joined dataset, so its rows were "
+                    "preserved separately in the output instead of being dropped."
+                )
             blockers.append({
                 "type": "unused_file_in_join_plan",
                 "files": unused_files,
                 "message": f"These uploaded files were never joined or appended: {unused_files}. "
-                           f"They would be silently excluded from the output — confirm this is intended.",
+                           f"The organizer preserved them as unmerged source rows instead of dropping them.",
             })
 
     elif merge_strategy in ("join", "mixed") and not legacy_merge_key:
-        # The plan explicitly declared it would join files (merge_strategy is
-        # "join" or "mixed"), but provided no usable join instruction — an
-        # empty/missing "joins" list AND no "merge_key". Falling through to
-        # the append branch below would silently produce a result that
-        # directly contradicts what the plan claimed to do: exactly the
-        # "looks successful but is actually wrong" failure mode this whole
-        # engine exists to prevent. A real example that triggered this: the
-        # planner returned merge_strategy="join", merge_key=null, joins=[] —
-        # execution then silently appended 12 rows with no join and no
-        # warning, instead of stopping to flag the contradiction.
+        # The plan explicitly declared it would join files but provided no
+        # usable join instruction. For a user who simply needs help, appending
+        # with a loud caveat is more useful than refusing to produce anything.
         blockers.append({
             "type": "incomplete_join_plan",
             "message": (
                 f"The plan specified merge_strategy '{merge_strategy}' but provided no usable join "
-                f"instruction — 'joins' was empty and 'merge_key' was not set. Rather than silently "
-                f"falling back to appending the files (which would contradict what the plan said it "
-                f"would do), this run stopped. Provide an explicit join key or join steps, or set "
-                f"merge_strategy to 'append' if stacking the files is actually what's intended."
+                f"instruction — 'joins' was empty and 'merge_key' was not set. The organizer appended "
+                f"the files into one preserved dataset and recorded this caveat."
             ),
         })
+        grain_warnings.append(
+            f"The plan said '{merge_strategy}' but had no usable join key or join steps, so files were "
+            f"stacked instead of joined."
+        )
         result_df = pd.concat(list(dfs.values()), ignore_index=True, sort=False)
         base_files_used = list(fnames_in_order)
 
@@ -6297,6 +6370,10 @@ async def _organize_execute_impl(
                 known_id_columns=id_columns_hint,
             )
             if blocker:
+                preserve_reasons[right_name] = (
+                    "Could not confidently join this file with the selected key, so the raw rows were "
+                    "preserved instead of being dropped."
+                )
                 blockers.append(blocker)
                 continue
             result_df = merged
@@ -6310,6 +6387,10 @@ async def _organize_execute_impl(
                 )
             risk_blocker = _check_risky_fanout(diag, right_name, [legacy_merge_key], confirm_risky_operations)
             if risk_blocker:
+                grain_warnings.append(
+                    f"Joining '{right_name}' on '{legacy_merge_key}' has high fanout risk. The organizer "
+                    f"completed the output but marked this as a caveat instead of silently treating it as fully clean."
+                )
                 blockers.append(risk_blocker)
             if diag["id_format_mismatch_detected"]:
                 grain_warnings.append(
@@ -6386,6 +6467,7 @@ async def _organize_execute_impl(
         except Exception as e:
             print(f"Post-merge transformation error ({t_type}): {e}")
 
+    result_df, preserved_sources = _append_preserved_sources(result_df, dfs, preserve_reasons)
     result_df = result_df.reset_index(drop=True)
     enforce_dataframe_limits(result_df, "organized output")
 
@@ -6468,8 +6550,18 @@ async def _organize_execute_impl(
     })
 
     if blockers:
-        validation["passed"] = False
         validation["blockers"] = blockers
+        validation["completed_with_caveats"] = True
+        for blocker in blockers:
+            msg = blocker.get("message")
+            if msg:
+                validation["warnings"].append(msg)
+
+    if preserved_sources:
+        validation["warnings"].append(
+            "Some uploaded files could not be confidently joined into the main table, so their rows "
+            "were preserved as clearly marked unmerged source records in the output."
+        )
 
     # Check 2: No empty dataset
     if len(result_df) == 0:
@@ -6483,28 +6575,6 @@ async def _organize_execute_impl(
     null_cols = [col for col in result_df.columns if result_df[col].isnull().all()]
     if null_cols:
         validation["warnings"].append(f"These columns are entirely null after merging: {null_cols}")
-
-    # If any join step hit a blocker (missing key, unresolvable file reference,
-    # or a file silently excluded from the plan), stop here. Do NOT run the
-    # second-pass verification or save a downloadable file — a blocked run
-    # must never be handed to the user dressed up as a success. The caller
-    # needs to choose how to proceed (different key, confirm append, etc.)
-    # before anything is finalized.
-    if blockers:
-        return {
-            "success": False,
-            "blocked": True,
-            "rows": len(result_df),
-            "cols": len(result_df.columns),
-            "validation": _json_safe(validation),
-            "blockers": _json_safe(blockers),
-            "message": (
-                "The organizer stopped before finishing because it hit a problem it can't safely "
-                "resolve on its own. Review the blockers below and choose how to proceed — for "
-                "example, pick a different join key for the affected file, or confirm it should be "
-                "appended instead of joined."
-            ),
-        }
 
     # ── SECOND PASS: Claude verifies the output ──
     try:
@@ -6538,6 +6608,9 @@ MERGE STRATEGY AND ROW-COUNT EXPECTATION:
 TRANSFORMATION PLAN THAT WAS APPLIED:
 {json.dumps(_json_safe(plan.get("transformations", [])), indent=2)}
 
+PRESERVED UNMERGED SOURCE FILES:
+{json.dumps(_json_safe(preserved_sources), indent=2)}
+
 OUTPUT DATASET SUMMARY:
 {json.dumps(_json_safe(output_summary), indent=2)}
 
@@ -6553,6 +6626,7 @@ ROW-COUNT RULES:
 - A row_multiplier notably above 1.0 for a join step is EXPECTED and healthy when it represents a real one-to-many relationship (e.g. customers to orders) — it is only a problem if grain_warnings does not already flag it, or if the multiplier is implausibly large relative to the data.
 - Only flag data loss if output rows are materially below matched_keys for the relevant join step, or if a blocker/missing-key situation is present.
 - If row_reducing_transformations_present is true, smaller row counts may be intentional. Evaluate whether the reduction matches the listed transformations before flagging data loss.
+- If PRESERVED UNMERGED SOURCE FILES is non-empty, those files were intentionally kept as clearly marked source records because they could not be confidently joined. Do not treat that as silent data loss; treat it as a caveat unless the preservation rows are missing from the output.
 
 Respond ONLY with JSON:
 {{
@@ -6601,7 +6675,7 @@ Respond ONLY with JSON:
     change_summary = _build_change_summary(
         fnames_in_order, original_counts, total_original_rows,
         len(result_df), len(result_df.columns), join_diagnostics,
-        base_files_used, transformations,
+        base_files_used, transformations, preserved_sources,
     )
     plain_english_insights = _generate_join_plain_english_insights(change_summary["joins"])
     generated_at = datetime.utcnow().isoformat() + "Z"
@@ -6623,6 +6697,8 @@ Respond ONLY with JSON:
         "download_ready": True,
         "change_summary": _json_safe(change_summary),
         "plain_english_insights": plain_english_insights,
+        "completed_with_caveats": bool(blockers or preserved_sources),
+        "preserved_sources": _json_safe(preserved_sources),
         "report_ready": True
     }
 
