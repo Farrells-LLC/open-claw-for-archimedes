@@ -1,6 +1,6 @@
 # Founder Screen Drafts - 2026-08-16
 
-Four new review drafts built to avoid synthetic AI-video footage.
+Four new review drafts built to avoid synthetic AI-video footage. The MP4s include short voiceovers over a low music bed.
 
 ## Direction
 
@@ -20,7 +20,7 @@ Four new review drafts built to avoid synthetic AI-video footage.
 - `archimedes_ad_039_founder_few_minutes.mp4`
   - Angle: bigger reports take a few minutes because the workflow audits the data.
 
-Each MP4 has a matching `_contact.jpg` review sheet.
+Each MP4 has a matching `_contact.jpg` review sheet. Silent working renders were kept local only and are not part of this review folder.
 
 ## Local Source
 
