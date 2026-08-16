@@ -1,6 +1,6 @@
 # Founder Screen Drafts - 2026-08-16
 
-Four new review drafts built to avoid synthetic AI-video footage. The MP4s include short voiceovers over a brighter, happier music bed.
+Four new review drafts built to avoid synthetic AI-video footage. The MP4s are music-only with a happy ethereal bed.
 
 ## Direction
 
