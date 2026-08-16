@@ -1,6 +1,6 @@
 # Founder Screen Drafts - 2026-08-16
 
-Four new review drafts built to avoid synthetic AI-video footage. The MP4s are music-only with a happy ethereal bed.
+Four new review drafts built to avoid synthetic AI-video footage. The MP4s are music-only using Archimedes' supplied happy background track.
 
 ## Direction
 
