@@ -1,6 +1,6 @@
 # Founder Screen Drafts - 2026-08-16
 
-Four new review drafts built to avoid synthetic AI-video footage. The MP4s are music-only using Archimedes' supplied happy background track.
+Four new review drafts built to avoid synthetic AI-video footage. The MP4s are music-only using distinct Pixabay-sourced tracks supplied by Archimedes.
 
 ## Direction
 
@@ -13,12 +13,16 @@ Four new review drafts built to avoid synthetic AI-video footage. The MP4s are m
 
 - `archimedes_ad_036_founder_join_check.mp4`
   - Angle: the report is not the first step; Archimedes checks the files first.
+  - Music: `atlasaudio-background-happy-562628`.
 - `archimedes_ad_037_founder_stockout_plain.mp4`
   - Angle: a plain stockout report that shows the loss pocket.
+  - Music: `saavane-a-whisper-of-the-ocean-201864`.
 - `archimedes_ad_038_founder_churn_check.mp4`
   - Angle: messy churn exports can still reveal drivers.
+  - Music: `the_mountain-wedding-522480`.
 - `archimedes_ad_039_founder_few_minutes.mp4`
   - Angle: bigger reports take a few minutes because the workflow audits the data.
+  - Music: `sergequadrado-atlantis-109015`.
 
 Each MP4 has a matching `_contact.jpg` review sheet. Silent working renders were kept local only and are not part of this review folder.
 
